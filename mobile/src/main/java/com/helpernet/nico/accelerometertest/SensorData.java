@@ -32,6 +32,8 @@ public class SensorData {
     private Float bearing = null;
     private Float error = null;
 
+    private Float pressure = null;
+
     public SensorData(long timestamp) {
         // convert nanoseconds to milliseconds for a resolution of 10Hz
         this.timestamp = timestamp/1000000;
@@ -44,6 +46,7 @@ public class SensorData {
         str += "," + rotString();
         str += "," + magString();
         str += "," + gnsString();
+        str += "," + presString();
         return str;
     }
 
@@ -265,6 +268,19 @@ public class SensorData {
 
     public void setGPSError(Float error) {
         this.error = error;
+    }
+
+    private String presString() {
+        if (pressure == null) return "";
+        else return Float.toString(pressure);
+    }
+
+    public Float getPressure() {
+        return pressure;
+    }
+
+    public void setPressure(Float pressure) {
+        this.pressure = pressure;
     }
 
     public long getTimestamp() {

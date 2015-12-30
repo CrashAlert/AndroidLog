@@ -149,38 +149,58 @@ public class SensorLoggerService extends Service implements SensorEventListener 
     @Override
     public void onSensorChanged(SensorEvent event) {
         Sensor sensor = event.sensor;
+        SensorData data = new SensorData(event.timestamp);
+        float x, y, z;
 
         switch (sensor.getType()) {
             case Sensor.TYPE_ACCELEROMETER:
-                float x = event.values[0];
-                float y = event.values[1];
-                float z = event.values[2];
-                long time = event.timestamp;
-
-                SensorData data = new SensorData(time);
+                x = event.values[0];
+                y = event.values[1];
+                z = event.values[2];
                 data.setAcc_x(x);
                 data.setAcc_y(y);
                 data.setAcc_z(z);
-
-                String dataString = data.toString();
-                Log.d(TAG, dataString);
-
-                new StoreStringTask().execute(dataString);
-                break;
-            case Sensor.TYPE_LINEAR_ACCELERATION:
                 break;
             case Sensor.TYPE_MAGNETIC_FIELD:
-                break;
-            case Sensor.TYPE_PRESSURE:
+                x = event.values[0];
+                y = event.values[1];
+                z = event.values[2];
+                data.setMag_x(x);
+                data.setMag_y(y);
+                data.setMag_z(z);
                 break;
             case Sensor.TYPE_GYROSCOPE:
+                x = event.values[0];
+                y = event.values[1];
+                z = event.values[2];
+                data.setGyr_x(x);
+                data.setGyr_y(y);
+                data.setGyr_z(z);
                 break;
             case Sensor.TYPE_ROTATION_VECTOR:
+                x = event.values[0];
+                y = event.values[1];
+                z = event.values[2];
+                data.setRot_x(x);
+                data.setRot_y(y);
+                data.setRot_z(z);
+                Log.d(TAG, event.values[3] + " " + event.values[4]);
+                break;
+            case Sensor.TYPE_LINEAR_ACCELERATION:
+                Log.d(TAG, event.values[1] + " " + event.values[2]);
+                data.setLin_acc(event.values[0]);
+                break;
+            case Sensor.TYPE_PRESSURE:
+                data.setPressure(event.values[0]);
                 break;
             default:
                 Log.d(TAG, "Data for Sensor not handled: " + sensor.getName());
                 break;
         }
+
+        String csvLine = data.toString();
+        Log.d(TAG, sensor.getName() + " " + csvLine + " " + event.values.length);
+        new StoreStringTask().execute(csvLine);
     }
 
     public void handleLocation(Location location) {

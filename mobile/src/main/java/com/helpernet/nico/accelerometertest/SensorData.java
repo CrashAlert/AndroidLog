@@ -25,9 +25,9 @@ public class SensorData {
     private Float mag_y = null;
     private Float mag_z = null;
 
-    private Float lat = null;
-    private Float lng = null;
-    private Float alt = null;
+    private Double lat = null;
+    private Double lng = null;
+    private Double alt = null;
     private Float speed = null;
     private Float bearing = null;
     private Float error = null;
@@ -209,37 +209,37 @@ public class SensorData {
             return ",,,,";
         }
         else {
-            String gnss = Float.toString(lat) + "," +
-                    Float.toString(lng) + "," +
+            String gnss = Double.toString(lat) + "," +
+                    Double.toString(lng) + "," +
                     Float.toString(bearing) + "," +
                     Float.toString(speed) + "," +
-                    Float.toString(alt) + "," +
+                    Double.toString(alt) + "," +
                     Float.toString(error);
             return gnss;
         }
     }
 
-    public Float getLat() {
+    public Double getLat() {
         return lat;
     }
 
-    public void setLat(Float lat) {
+    public void setLat(Double lat) {
         this.lat = lat;
     }
 
-    public Float getLng() {
+    public Double getLng() {
         return lng;
     }
 
-    public void setLng(Float lng) {
+    public void setLng(Double lng) {
         this.lng = lng;
     }
 
-    public Float getAlt() {
+    public Double getAlt() {
         return alt;
     }
 
-    public void setAlt(Float alt) {
+    public void setAlt(Double alt) {
         this.alt = alt;
     }
 

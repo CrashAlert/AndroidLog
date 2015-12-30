@@ -38,12 +38,16 @@ public class SensorData {
 
     public String toString() {
         String str = Long.toString(this.timestamp);
-
-        return "";
+        str += ',' + accString();
+        str += ',' + linAccString();
+        str += ',' + rotString();
+        str += ',' + magString();
+        str += ',' + gnsString();
+        return str;
     }
 
     private String accString() {
-        if (acc_x == acc_y == acc_z == null) {
+        if (acc_x == null) {
             return ',,';
         }
         else {
@@ -92,14 +96,14 @@ public class SensorData {
     }
 
     private String gyrString() {
-        if (gyr_x == gyr_y == gyr_z == null) {
+        if (gyr_x == null) {
             return ',,';
         }
         else {
-            String acc = Float.toString(gyr_x) + ',' +
+            String gyr = Float.toString(gyr_x) + ',' +
                     Float.toString(gyr_y) + ',' +
                     Float.toString(gyr_z);
-            return acc;
+            return gyr;
         }
     }
 
@@ -127,6 +131,18 @@ public class SensorData {
         this.gyr_z = gyr_z;
     }
 
+    private String rotString() {
+        if (rot_x == null) {
+            return ',,';
+        }
+        else {
+            String rot = Float.toString(rot_x) + ',' +
+                    Float.toString(rot_y) + ',' +
+                    Float.toString(rot_z);
+            return rot;
+        }
+    }
+
     public Float getRot_x() {
         return rot_x;
     }
@@ -151,6 +167,18 @@ public class SensorData {
         this.rot_z = rot_z;
     }
 
+    private String magString() {
+        if (mag_x == null) {
+            return ',,';
+        }
+        else {
+            String rot = Float.toString(mag_x) + ',' +
+                    Float.toString(mag_y) + ',' +
+                    Float.toString(mag_z);
+            return rot;
+        }
+    }
+
     public Float getMag_x() {
         return mag_x;
     }
@@ -173,6 +201,20 @@ public class SensorData {
 
     public void setMag_z(Float mag_z) {
         this.mag_z = mag_z;
+    }
+
+    private String gnsString() {
+        if (lat == null) {
+            return ',,,,';
+        }
+        else {
+            String gnss = Float.toString(lat) + ',' +
+                    Float.toString(lng) + ',' +
+                    Float.toString(bearing) + ',' +
+                    Float.toString(alt) + ',' +
+                    Float.toString(error);
+            return gnss;
+        }
     }
 
     public Float getLat() {
@@ -207,8 +249,15 @@ public class SensorData {
         this.bearing = bearing;
     }
 
-    public long getTimestamp() {
+    public Float getGPSError() {
+        return error;
+    }
 
+    public void setGPSError(Float error) {
+        this.error = error;
+    }
+
+    public long getTimestamp() {
         return timestamp;
     }
 

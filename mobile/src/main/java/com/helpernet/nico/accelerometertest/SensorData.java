@@ -44,13 +44,18 @@ public class SensorData {
     public String toString() {
         String str = Long.toString(this.timestamp);
         str += "," + accString();
-        str += "," + gyrString();
         str += "," + linAccString();
+        str += "," + gyrString();
         str += "," + rotString();
         str += "," + magString();
         str += "," + gnsString();
         str += "," + presString();
+        str += "," + verboseString();
         return str;
+    }
+
+    private String verboseString() {
+        return ",,,,,,";
     }
 
     private String accString() {
@@ -238,12 +243,13 @@ public class SensorData {
             return ",,,,";
         }
         else {
+            String err = Float.toString(error);
             String gnss = Float.toString(lat) + "," +
                     Float.toString(lng) + "," +
                     Float.toString(bearing) + "," +
                     Float.toString(speed) + "," +
                     Float.toString(alt) + "," +
-                    Float.toString(error);
+                    err + "," + err;
             return gnss;
         }
     }

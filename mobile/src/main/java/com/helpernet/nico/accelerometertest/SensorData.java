@@ -11,7 +11,9 @@ public class SensorData {
     private Float acc_y = null;
     private Float acc_z = null;
 
-    private Float lin_acc = null;
+    private Float lin_acc_x = null;
+    private Float lin_acc_y = null;
+    private Float lin_acc_z = null;
 
     private Float gyr_x = null;
     private Float gyr_y = null;
@@ -42,6 +44,7 @@ public class SensorData {
     public String toString() {
         String str = Long.toString(this.timestamp);
         str += "," + accString();
+        str += "," + gyrString();
         str += "," + linAccString();
         str += "," + rotString();
         str += "," + magString();
@@ -87,16 +90,39 @@ public class SensorData {
     }
 
     private String linAccString() {
-        if (lin_acc==null) return "";
-        else return Float.toString(lin_acc);
+        if (lin_acc_x == null) {
+            return ",,";
+        }
+        else {
+            String acc = Float.toString(lin_acc_x) + "," +
+                    Float.toString(lin_acc_y) + "," +
+                    Float.toString(lin_acc_z);
+            return acc;
+        }
     }
 
-    public Float getLin_acc() {
-        return lin_acc;
+    public Float getLin_acc_x() {
+        return lin_acc_x;
     }
 
-    public void setLin_acc(Float lin_acc) {
-        this.lin_acc = lin_acc;
+    public void setLin_acc_x(Float lin_acc_x) {
+        this.lin_acc_x = lin_acc_x;
+    }
+
+    public Float getLin_acc_y() {
+        return lin_acc_y;
+    }
+
+    public void setLin_acc_y(Float lin_acc_y) {
+        this.lin_acc_y = lin_acc_y;
+    }
+
+    public Float getLin_acc_z() {
+        return lin_acc_z;
+    }
+
+    public void setLin_acc_z(Float lin_acc_z) {
+        this.lin_acc_z = lin_acc_z;
     }
 
     private String gyrString() {

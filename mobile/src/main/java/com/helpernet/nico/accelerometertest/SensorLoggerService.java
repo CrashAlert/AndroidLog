@@ -24,6 +24,7 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.Arrays;
 
 /**
  * Created by nico on 29/12/15.
@@ -31,6 +32,8 @@ import java.io.IOException;
 public class SensorLoggerService extends Service implements SensorEventListener {
 
     private final String TAG = "SensorLoggerService";
+
+    SensorManager sensorManager = null;
 
     private File dataLogFile = null;
 
@@ -40,7 +43,7 @@ public class SensorLoggerService extends Service implements SensorEventListener 
             Sensor.TYPE_MAGNETIC_FIELD,
             Sensor.TYPE_PRESSURE,
             Sensor.TYPE_GYROSCOPE,
-            Sensor.TYPE_ROTATION_VECTOR
+            Sensor.TYPE_ORIENTATION
     };
 
     LocationManager locationManager = null;
@@ -134,7 +137,7 @@ public class SensorLoggerService extends Service implements SensorEventListener 
 
 
     public void registerSensors() {
-        SensorManager sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
+        sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
 
         for (int sensorType : sensorTypes) {
 
@@ -151,7 +154,6 @@ public class SensorLoggerService extends Service implements SensorEventListener 
     }
 
     public void unregisterSensors() {
-        SensorManager sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
         sensorManager.unregisterListener(this);
     }
 
@@ -160,6 +162,7 @@ public class SensorLoggerService extends Service implements SensorEventListener 
         Sensor sensor = event.sensor;
         SensorData data = new SensorData(event.timestamp);
         float x, y, z;
+
 
         switch (sensor.getType()) {
             case Sensor.TYPE_ACCELEROMETER:
@@ -185,19 +188,23 @@ public class SensorLoggerService extends Service implements SensorEventListener 
                 data.setGyr_x(x);
                 data.setGyr_y(y);
                 data.setGyr_z(z);
+                Log.d(TAG, x + " " + y + " " + z);
                 break;
-            case Sensor.TYPE_ROTATION_VECTOR:
+            case Sensor.TYPE_ORIENTATION:
                 x = event.values[0];
                 y = event.values[1];
                 z = event.values[2];
                 data.setRot_x(x);
                 data.setRot_y(y);
                 data.setRot_z(z);
-                Log.d(TAG, event.values[3] + " " + event.values[4]);
                 break;
             case Sensor.TYPE_LINEAR_ACCELERATION:
-                Log.d(TAG, event.values[1] + " " + event.values[2]);
-                data.setLin_acc(event.values[0]);
+                x = event.values[0];
+                y = event.values[1];
+                z = event.values[2];
+                data.setLin_acc_x(x);
+                data.setLin_acc_y(y);
+                data.setLin_acc_z(z);
                 break;
             case Sensor.TYPE_PRESSURE:
                 data.setPressure(event.values[0]);

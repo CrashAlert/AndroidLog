@@ -28,6 +28,7 @@ public class SensorData {
     private Float lat = null;
     private Float lng = null;
     private Float alt = null;
+    private Float speed = null;
     private Float bearing = null;
     private Float error = null;
 
@@ -211,6 +212,7 @@ public class SensorData {
             String gnss = Float.toString(lat) + ',' +
                     Float.toString(lng) + ',' +
                     Float.toString(bearing) + ',' +
+                    Float.toString(speed) + ',' +
                     Float.toString(alt) + ',' +
                     Float.toString(error);
             return gnss;
@@ -247,6 +249,14 @@ public class SensorData {
 
     public void setBearing(Float bearing) {
         this.bearing = bearing;
+    }
+
+    public void getSpeed() {
+        return speed;
+    }
+
+    public Float setSpeed(Float speed) {
+        this.speed = speed;
     }
 
     public Float getGPSError() {

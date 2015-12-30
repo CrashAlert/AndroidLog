@@ -39,21 +39,21 @@ public class SensorData {
 
     public String toString() {
         String str = Long.toString(this.timestamp);
-        str += ',' + accString();
-        str += ',' + linAccString();
-        str += ',' + rotString();
-        str += ',' + magString();
-        str += ',' + gnsString();
+        str += "," + accString();
+        str += "," + linAccString();
+        str += "," + rotString();
+        str += "," + magString();
+        str += "," + gnsString();
         return str;
     }
 
     private String accString() {
         if (acc_x == null) {
-            return ',,';
+            return ",,";
         }
         else {
-            String acc = Float.toString(acc_x) + ',' +
-                         Float.toString(acc_y) + ',' +
+            String acc = Float.toString(acc_x) + "," +
+                         Float.toString(acc_y) + "," +
                          Float.toString(acc_z);
             return acc;
         }
@@ -84,8 +84,8 @@ public class SensorData {
     }
 
     private String linAccString() {
-        if (lin_acc==null) return '';
-        else return Float.toString(lin_acc)
+        if (lin_acc==null) return "";
+        else return Float.toString(lin_acc);
     }
 
     public Float getLin_acc() {
@@ -98,11 +98,11 @@ public class SensorData {
 
     private String gyrString() {
         if (gyr_x == null) {
-            return ',,';
+            return ",,";
         }
         else {
-            String gyr = Float.toString(gyr_x) + ',' +
-                    Float.toString(gyr_y) + ',' +
+            String gyr = Float.toString(gyr_x) + "," +
+                    Float.toString(gyr_y) + "," +
                     Float.toString(gyr_z);
             return gyr;
         }
@@ -134,11 +134,11 @@ public class SensorData {
 
     private String rotString() {
         if (rot_x == null) {
-            return ',,';
+            return ",,";
         }
         else {
-            String rot = Float.toString(rot_x) + ',' +
-                    Float.toString(rot_y) + ',' +
+            String rot = Float.toString(rot_x) + "," +
+                    Float.toString(rot_y) + "," +
                     Float.toString(rot_z);
             return rot;
         }
@@ -170,11 +170,11 @@ public class SensorData {
 
     private String magString() {
         if (mag_x == null) {
-            return ',,';
+            return ",,";
         }
         else {
-            String rot = Float.toString(mag_x) + ',' +
-                    Float.toString(mag_y) + ',' +
+            String rot = Float.toString(mag_x) + "," +
+                    Float.toString(mag_y) + "," +
                     Float.toString(mag_z);
             return rot;
         }
@@ -206,14 +206,14 @@ public class SensorData {
 
     private String gnsString() {
         if (lat == null) {
-            return ',,,,';
+            return ",,,,";
         }
         else {
-            String gnss = Float.toString(lat) + ',' +
-                    Float.toString(lng) + ',' +
-                    Float.toString(bearing) + ',' +
-                    Float.toString(speed) + ',' +
-                    Float.toString(alt) + ',' +
+            String gnss = Float.toString(lat) + "," +
+                    Float.toString(lng) + "," +
+                    Float.toString(bearing) + "," +
+                    Float.toString(speed) + "," +
+                    Float.toString(alt) + "," +
                     Float.toString(error);
             return gnss;
         }
@@ -251,11 +251,11 @@ public class SensorData {
         this.bearing = bearing;
     }
 
-    public void getSpeed() {
+    public Float getSpeed() {
         return speed;
     }
 
-    public Float setSpeed(Float speed) {
+    public void setSpeed(Float speed) {
         this.speed = speed;
     }
 

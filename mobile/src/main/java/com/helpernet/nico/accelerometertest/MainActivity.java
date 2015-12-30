@@ -2,6 +2,7 @@ package com.helpernet.nico.accelerometertest;
 
 import android.annotation.TargetApi;
 import android.content.Context;
+import android.content.Intent;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
@@ -41,15 +42,8 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
-
-        SensorManager sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
-
-        Log.d(TAG, "Accelerometer sensors: ");
-        for (Sensor sensor : sensorManager.getSensorList(Sensor.TYPE_ACCELEROMETER)) {
-         Log.d(TAG, "Sensor name: " + sensor.getName());
-        }
+//        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+//        setSupportActionBar(toolbar);
 
         xAccText = (TextView) findViewById(R.id.xAccText);
         yAccText = (TextView) findViewById(R.id.yAccText);
@@ -58,6 +52,10 @@ public class MainActivity extends AppCompatActivity {
 //        String[] perms = {"android.permissions.WRITE_EXTERNAL_STORAGE"};
 //        requestPermissions(perms, 200);
 
+        // start SensorLogger Service
+        Intent intent = new Intent(getApplicationContext(), SensorLoggerService.class);
+        intent.putExtra("fileName", "testLog");
+        startService(intent);
     }
 
     @Override

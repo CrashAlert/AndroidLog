@@ -26,7 +26,7 @@ public class SensorLoggerService extends Service implements SensorEventListener 
 
     private final String TAG = "SensorLoggerService";
 
-    private File dataLogFile;
+    private File dataLogFile = null;
 
     private final int[] sensorTypes = new int[] {
             Sensor.TYPE_ACCELEROMETER,
@@ -44,14 +44,18 @@ public class SensorLoggerService extends Service implements SensorEventListener 
     }
 
     @Override
-    public int onStartCommand(Intent intent, int flags, int startId) {
-
-        Bundle extras = intent.getExtras();
-        String logFileName = extras.getString("fileName");
-        createLogFile(logFileName);
+    public void onCreate() {
         registerSensors();
+    }
 
-        return Service.START_STICKY;
+    @Override
+    public int onStartCommand(Intent intent, int flags, int startId) {
+        Bundle extras = intent.getExtras();
+        if (extras != null) {
+            String logFileName = extras.getString("fileName");
+            createLogFile(logFileName);
+        }
+        return START_STICKY;
     }
 
     @Override
@@ -106,12 +110,26 @@ public class SensorLoggerService extends Service implements SensorEventListener 
                 float y = event.values[1];
                 float z = event.values[2];
                 long time = event.timestamp;
-                Log.d(TAG, String.format("Sensor data, time: %d, x: %f, y: %f, z: %f", time, x, y, z));
 
-                String dataText = String.format("%d,%f,%f,%f", time, x, y, z);
-                new StoreStringTask().execute(dataText);
+                SensorData data = new SensorData(time);
+                data.setAcc_x(x);
+                data.setAcc_y(y);
+                data.setAcc_z(z);
 
-//              showSensorValues(x, y, z);
+                String dataString = data.toString();
+                Log.d(TAG, dataString);
+
+                new StoreStringTask().execute(dataString);
+                break;
+            case Sensor.TYPE_LINEAR_ACCELERATION:
+                break;
+            case Sensor.TYPE_MAGNETIC_FIELD:
+                break;
+            case Sensor.TYPE_PRESSURE:
+                break;
+            case Sensor.TYPE_GYROSCOPE:
+                break;
+            case Sensor.TYPE_ROTATION_VECTOR:
                 break;
             default:
                 Log.d(TAG, "Data for Sensor not handled: " + sensor.getName());

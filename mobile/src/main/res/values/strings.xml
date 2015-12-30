@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">AccelerometerTest</string>
+    <string name="action_settings">Settings</string>
+    <string name="xAcc">x:</string>
+    <string name="yAcc">y:</string>
+    <string name="zAcc">z:</string>
+</resources>

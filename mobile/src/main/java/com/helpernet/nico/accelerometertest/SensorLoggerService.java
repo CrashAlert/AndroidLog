@@ -73,6 +73,7 @@ public class SensorLoggerService extends Service implements SensorEventListener 
     @Override
     public void onCreate() {
         locationManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
+        sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
 
         registerSensors();
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
@@ -137,8 +138,6 @@ public class SensorLoggerService extends Service implements SensorEventListener 
 
 
     public void registerSensors() {
-        sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
-
         for (int sensorType : sensorTypes) {
 
             Sensor sensor = sensorManager.getDefaultSensor(sensorType);

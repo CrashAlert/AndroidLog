@@ -125,7 +125,9 @@ public class SensorLoggerService extends Service implements SensorEventListener 
     }
 
     public void createLogFile(String fileName) {
-        dataLogFile = new File(Environment.getExternalStorageDirectory().getPath() + "/" + fileName + ".csv");
+        File dataLogDir = new File(Environment.getExternalStorageDirectory().getPath() + "/sensorLogger/");
+        dataLogDir.mkdirs();
+        dataLogFile = new File(dataLogDir, fileName + ".csv");
         if (!dataLogFile.exists()) {
             try {
                 dataLogFile.createNewFile();

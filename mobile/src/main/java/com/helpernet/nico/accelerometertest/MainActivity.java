@@ -28,7 +28,11 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
@@ -81,6 +85,9 @@ public class MainActivity extends AppCompatActivity {
         isServiceRunning = true;
         Log.i(TAG, "Starting logging background Service");
         Intent serviceIntent = new Intent(getApplicationContext(), SensorLoggerService.class);
+        SimpleDateFormat df = new SimpleDateFormat("yyyyMMddHHmmss");
+        String timePrefix =  df.format(new Date()) + "-";
+        fileName = timePrefix + fileName;
         serviceIntent.putExtra("fileName", fileName);
         startService(serviceIntent);
     }

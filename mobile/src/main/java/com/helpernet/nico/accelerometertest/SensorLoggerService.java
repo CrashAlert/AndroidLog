@@ -123,7 +123,7 @@ public class SensorLoggerService extends Service implements SensorEventListener 
     }
 
     public void createLogFile(String fileName) {
-        dataLogFile = new File(Environment.getExternalStorageDirectory().getPath() + "/" + fileName + ".txt");
+        dataLogFile = new File(Environment.getExternalStorageDirectory().getPath() + "/" + fileName + ".csv");
         if (!dataLogFile.exists()) {
             try {
                 dataLogFile.createNewFile();
@@ -131,6 +131,16 @@ public class SensorLoggerService extends Service implements SensorEventListener 
             catch (IOException e) {
                 Log.e(TAG, "Couldnt create LogFile: " + e.toString());
                 // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+
+            try {
+                BufferedWriter buf = new BufferedWriter(new FileWriter(dataLogFile, true));
+                buf.append(SensorData.header);
+                buf.newLine();
+                buf.close();
+            } catch (IOException e) {
+                Log.e(TAG, "Writing header failed!");
                 e.printStackTrace();
             }
         }
@@ -211,6 +221,7 @@ public class SensorLoggerService extends Service implements SensorEventListener 
         }
 
         String csvLine = data.toString();
+        Log.d(TAG, csvLine);
         new StoreStringTask().execute(csvLine);
     }
 

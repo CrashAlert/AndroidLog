@@ -3,7 +3,14 @@ package com.helpernet.nico.accelerometertest;
 /**
  * Created by nico on 30/12/15.
  */
+
 public class SensorData {
+
+    public static String header = "unix_time,acc_x,acc_y,acc_z,"
+            + "lin_acc_x,lin_acc_y,lin_acc_z,gyr_x,gyr_y,gyr_z,"
+            + "rot_x,rot_y,rot_z,mag_x,mag_y,mag_z,lat,lng,"
+            + "bearing,speed,alt,gnss_err,pressure,station,"
+            + "run,walk,auto,cycling,unknown";
 
     private long timestamp;
 
@@ -37,8 +44,7 @@ public class SensorData {
     private Float pressure = null;
 
     public SensorData(long timestamp) {
-        // convert nanoseconds to milliseconds for a resolution of 10Hz
-        this.timestamp = timestamp/1000000;
+        this.timestamp = timestamp;
     }
 
     public String toString() {

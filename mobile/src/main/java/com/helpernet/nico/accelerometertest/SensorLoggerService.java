@@ -8,11 +8,14 @@ import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.AsyncTask;
+import android.os.Bundle;
+import android.os.Environment;
 import android.os.IBinder;
 import android.support.annotation.Nullable;
 import android.util.Log;
 
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 
@@ -22,6 +25,8 @@ import java.io.IOException;
 public class SensorLoggerService extends Service implements SensorEventListener {
 
     private final String TAG = "SensorLoggerService";
+
+    private File dataLogFile;
 
     private final int[] sensorTypes = new int[] {
             Sensor.TYPE_ACCELEROMETER,
@@ -41,7 +46,9 @@ public class SensorLoggerService extends Service implements SensorEventListener 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
 
-        createLogFile("test");
+        Bundle extras = intent.getExtras();
+        String logFileName = extras.getString("fileName");
+        createLogFile(logFileName);
         registerSensors();
 
         return Service.START_STICKY;
@@ -53,7 +60,17 @@ public class SensorLoggerService extends Service implements SensorEventListener 
         unregisterSensors();
     }
 
-    public void createLogFile(String testName) {
+    public void createLogFile(String fileName) {
+        dataLogFile = new File(Environment.getExternalStorageDirectory().getPath() + "/" + fileName + ".txt");
+        if (!dataLogFile.exists()) {
+            try {
+                dataLogFile.createNewFile();
+            }
+            catch (IOException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+        }
     }
 
 

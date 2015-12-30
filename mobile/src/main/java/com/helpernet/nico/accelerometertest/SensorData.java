@@ -46,6 +46,7 @@ public class SensorData {
         str += "," + rotString();
         str += "," + magString();
         str += "," + gnsString();
+        str += "," + presString();
         return str;
     }
 
@@ -267,6 +268,11 @@ public class SensorData {
 
     public void setGPSError(Float error) {
         this.error = error;
+    }
+
+    private String presString() {
+        if (pressure == null) return "";
+        else return Float.toString(pressure);
     }
 
     public Float getPressure() {

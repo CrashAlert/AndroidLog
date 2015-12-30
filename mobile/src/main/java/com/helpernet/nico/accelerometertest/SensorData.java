@@ -9,7 +9,7 @@ public class SensorData {
     public static String header = "unix_time,acc_x,acc_y,acc_z,"
             + "lin_acc_x,lin_acc_y,lin_acc_z,gyr_x,gyr_y,gyr_z,"
             + "rot_x,rot_y,rot_z,mag_x,mag_y,mag_z,lat,lng,"
-            + "bearing,speed,alt,gnss_err,pressure,station,"
+            + "bearing,speed,alt,err_lat,err_lng,pressure,station,"
             + "run,walk,auto,cycling,unknown";
 
     private long timestamp;
@@ -246,7 +246,7 @@ public class SensorData {
 
     private String gnsString() {
         if (lat == null) {
-            return ",,,,";
+            return ",,,,,,";
         }
         else {
             String err = Float.toString(error);

@@ -20,9 +20,6 @@ import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.util.Log;
 
-import com.google.android.gms.common.ConnectionResult;
-import com.google.android.gms.common.api.GoogleApiClient;
-
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
@@ -46,7 +43,7 @@ public class SensorLoggerService extends Service implements SensorEventListener 
             Sensor.TYPE_ROTATION_VECTOR
     };
 
-    LocationManager locationManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
+    LocationManager locationManager = null;
 
     LocationListener locationListener = new LocationListener() {
         public void onLocationChanged(Location location) {
@@ -72,6 +69,8 @@ public class SensorLoggerService extends Service implements SensorEventListener 
 
     @Override
     public void onCreate() {
+        locationManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
+
         registerSensors();
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             // TODO: Consider calling
@@ -93,8 +92,9 @@ public class SensorLoggerService extends Service implements SensorEventListener 
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        Bundle extras = intent.getExtras();
-        if (extras != null) {
+        if (intent != null) {
+            Bundle extras = intent.getExtras();
+            Log.e(TAG, "Intent got no extras");
             String logFileName = extras.getString("fileName");
             createLogFile(logFileName);
         }
@@ -105,7 +105,17 @@ public class SensorLoggerService extends Service implements SensorEventListener 
     public void onDestroy() {
         super.onDestroy();
         unregisterSensors();
-        //locationManager.removeUpdates(locationListener);
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            // TODO: Consider calling
+            //    ActivityCompat#requestPermissions
+            // here to request the missing permissions, and then overriding
+            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+            //                                          int[] grantResults)
+            // to handle the case where the user grants the permission. See the documentation
+            // for ActivityCompat#requestPermissions for more details.
+            return;
+        }
+        locationManager.removeUpdates(locationListener);
     }
 
     public void createLogFile(String fileName) {
@@ -115,6 +125,7 @@ public class SensorLoggerService extends Service implements SensorEventListener 
                 dataLogFile.createNewFile();
             }
             catch (IOException e) {
+                Log.e(TAG, "Couldnt create LogFile: " + e.toString());
                 // TODO Auto-generated catch block
                 e.printStackTrace();
             }
@@ -143,8 +154,6 @@ public class SensorLoggerService extends Service implements SensorEventListener 
         SensorManager sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
         sensorManager.unregisterListener(this);
     }
-
-
 
     @Override
     public void onSensorChanged(SensorEvent event) {
@@ -212,6 +221,9 @@ public class SensorLoggerService extends Service implements SensorEventListener 
         data.setAlt(location.getAltitude());
         data.setGPSError(location.getAccuracy());
         String dataString = data.toString();
+
+        Log.d(TAG, "Location: " + dataString);
+
         new StoreStringTask().execute(dataString);
     }
 
@@ -219,6 +231,9 @@ public class SensorLoggerService extends Service implements SensorEventListener 
 
         @Override
         protected Void doInBackground(String... lines) {
+
+            if (dataLogFile == null) return null;
+
             for (String line : lines) {
                 storeSensorData(line);
             }

@@ -1,6 +1,7 @@
 package com.helpernet.nico.accelerometertest;
 
 import android.annotation.TargetApi;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.hardware.Sensor;
@@ -36,8 +37,9 @@ public class MainActivity extends AppCompatActivity {
 
     private final String TAG = "Main";
 
-    private File dataLogFile;
+    private boolean isServiceRunning = false;
 
+    private File dataLogFile;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -53,9 +55,28 @@ public class MainActivity extends AppCompatActivity {
 //        requestPermissions(perms, 200);
 
         // start SensorLogger Service
-        Intent intent = new Intent(getApplicationContext(), SensorLoggerService.class);
-        intent.putExtra("fileName", "testLog");
-        startService(intent);
+        startLoggingService("testLog");
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        stopLoggingService();
+    }
+
+    public void startLoggingService(String fileName) {
+        isServiceRunning = true;
+        Log.d(TAG, "Starting logging background Service");
+        Intent serviceIntent = new Intent(getApplicationContext(), SensorLoggerService.class);
+        serviceIntent.putExtra("fileName", fileName);
+        startService(serviceIntent);
+    }
+
+    public void stopLoggingService() {
+        isServiceRunning = false;
+        Log.d(TAG, "Stopping logging background Service");
+        Intent serviceIntent = new Intent(getApplicationContext(), SensorLoggerService.class);
+        stopService(serviceIntent);
     }
 
     @Override

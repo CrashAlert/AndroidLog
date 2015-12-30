@@ -125,7 +125,7 @@ public class SensorLoggerService extends Service implements SensorEventListener 
     }
 
     public void createLogFile(String fileName) {
-        dataLogFile = new File(Environment.getExternalStorageDirectory().getPath() + "/" + fileName + ".txt");
+        dataLogFile = new File(Environment.getExternalStorageDirectory().getPath() + "/" + fileName + ".csv");
         if (!dataLogFile.exists()) {
             try {
                 dataLogFile.createNewFile();
@@ -135,13 +135,22 @@ public class SensorLoggerService extends Service implements SensorEventListener 
                 // TODO Auto-generated catch block
                 e.printStackTrace();
             }
+
+            try {
+                BufferedWriter buf = new BufferedWriter(new FileWriter(dataLogFile, true));
+                buf.append(SensorData.header);
+                buf.newLine();
+                buf.close();
+            } catch (IOException e) {
+                Log.e(TAG, "Writing header failed!");
+                e.printStackTrace();
+            }
         }
     }
 
 
     public void registerSensors() {
         for (int sensorType : sensorTypes) {
-
             Sensor sensor = sensorManager.getDefaultSensor(sensorType);
 
             String name = sensor.getName();
@@ -163,7 +172,6 @@ public class SensorLoggerService extends Service implements SensorEventListener 
         Sensor sensor = event.sensor;
         SensorData data = new SensorData(event.timestamp);
         float x, y, z;
-
 
         switch (sensor.getType()) {
             case Sensor.TYPE_ACCELEROMETER:
@@ -189,7 +197,6 @@ public class SensorLoggerService extends Service implements SensorEventListener 
                 data.setGyr_x(x);
                 data.setGyr_y(y);
                 data.setGyr_z(z);
-                Log.d(TAG, x + " " + y + " " + z);
                 break;
             case Sensor.TYPE_ORIENTATION:
                 x = event.values[0];
@@ -216,7 +223,7 @@ public class SensorLoggerService extends Service implements SensorEventListener 
         }
 
         String csvLine = data.toString();
-        Log.d(TAG, sensor.getName() + " " + csvLine + " " + event.values.length);
+        Log.d(TAG, csvLine);
         new StoreStringTask().execute(csvLine);
     }
 

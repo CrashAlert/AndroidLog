@@ -16,9 +16,12 @@ import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.Button;
+import android.widget.EditText;
 import android.widget.TextView;
 
 import java.io.BufferedWriter;
@@ -30,16 +33,18 @@ import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
 
-
-    private TextView xAccText;
-    private TextView yAccText;
-    private TextView zAccText;
-
     private final String TAG = "Main";
 
     private boolean isServiceRunning = false;
+    private String isRunningString = "Stop Logging";
+    private String isNotRunningString = "Start Logging";
+
+    EditText textInput;
+    Button startStopButton;
 
     private File dataLogFile;
+
+    @TargetApi(Build.VERSION_CODES.M)
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -47,26 +52,34 @@ public class MainActivity extends AppCompatActivity {
 //        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
 //        setSupportActionBar(toolbar);
 
-        xAccText = (TextView) findViewById(R.id.xAccText);
-        yAccText = (TextView) findViewById(R.id.yAccText);
-        zAccText = (TextView) findViewById(R.id.zAccText);
+        startStopButton = (Button) findViewById(R.id.start_stop_button);
+        setButtonText();
+        textInput = (EditText) findViewById(R.id.text_input);
 
-//        String[] perms = {"android.permissions.WRITE_EXTERNAL_STORAGE"};
-//        requestPermissions(perms, 200);
+        startStopButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (isServiceRunning) {
+                    stopLoggingService();
+                } else {
+                    startLoggingService(textInput.getText().toString());
+                }
+                setButtonText();
+            }
+        });
 
-        // start SensorLogger Service
-        startLoggingService("testLog");
+        String[] perms = {"android.permission.WRITE_EXTERNAL_STORAGE", "android.permission.ACCESS_FINE_LOCATION"};
+        requestPermissions(perms, 200);
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        stopLoggingService();
     }
 
     public void startLoggingService(String fileName) {
         isServiceRunning = true;
-        Log.d(TAG, "Starting logging background Service");
+        Log.i(TAG, "Starting logging background Service");
         Intent serviceIntent = new Intent(getApplicationContext(), SensorLoggerService.class);
         serviceIntent.putExtra("fileName", fileName);
         startService(serviceIntent);
@@ -74,9 +87,17 @@ public class MainActivity extends AppCompatActivity {
 
     public void stopLoggingService() {
         isServiceRunning = false;
-        Log.d(TAG, "Stopping logging background Service");
+        Log.i(TAG, "Stopping logging background Service");
         Intent serviceIntent = new Intent(getApplicationContext(), SensorLoggerService.class);
         stopService(serviceIntent);
+    }
+
+    public void setButtonText() {
+        if (isServiceRunning) {
+            startStopButton.setText(isRunningString);
+        } else {
+            startStopButton.setText(isNotRunningString);
+        }
     }
 
     @Override
@@ -99,11 +120,5 @@ public class MainActivity extends AppCompatActivity {
         }
 
         return super.onOptionsItemSelected(item);
-    }
-
-    private void showSensorValues(float x, float y, float z) {
-        xAccText.setText("x: " + x);
-        yAccText.setText("y: " + y);
-        zAccText.setText("z: " + z);
     }
 }

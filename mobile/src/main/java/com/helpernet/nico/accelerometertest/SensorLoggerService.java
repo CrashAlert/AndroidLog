@@ -84,6 +84,7 @@ public class SensorLoggerService extends Service implements SensorEventListener 
             //                                          int[] grantResults)
             // to handle the case where the user grants the permission. See the documentation
             // for ActivityCompat#requestPermissions for more details.
+            Log.e(TAG, "No permissions for accessing location");
             return;
         }
 
@@ -117,6 +118,7 @@ public class SensorLoggerService extends Service implements SensorEventListener 
             //                                          int[] grantResults)
             // to handle the case where the user grants the permission. See the documentation
             // for ActivityCompat#requestPermissions for more details.
+            Log.e(TAG, "No permissions for accessing location");
             return;
         }
         locationManager.removeUpdates(locationListener);
@@ -226,6 +228,7 @@ public class SensorLoggerService extends Service implements SensorEventListener 
         data.setBearing(location.getBearing());
         data.setAlt(location.getAltitude());
         data.setGPSError(location.getAccuracy());
+        data.setSpeed(location.getSpeed());
         String dataString = data.toString();
 
         Log.d(TAG, "Location: " + dataString);

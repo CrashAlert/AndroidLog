@@ -2,66 +2,49 @@ package com.helpernet.nico.accelerometertest;
 
 import android.annotation.TargetApi;
 import android.app.ActivityManager;
-import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.hardware.Sensor;
-import android.hardware.SensorEvent;
-import android.hardware.SensorEventListener;
-import android.hardware.SensorManager;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Environment;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
 import android.util.Log;
-import android.view.KeyEvent;
-import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.TextView;
+import android.Manifest;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Date;
-import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
 
     private final String TAG = "Main";
 
     private final String[] perms = {
-            "android.permission.WRITE_EXTERNAL_STORAGE",
-            "android.permission.ACCESS_FINE_LOCATION"
+        Manifest.permission.WRITE_EXTERNAL_STORAGE,
+        Manifest.permission.ACCESS_FINE_LOCATION
     };
+
+    private final int PERMISSION_REQUEST_ID = 1;
 
     private final String fileSuffix = "Android-" + android.os.Build.MODEL;
 
     private boolean isServiceRunning;
-    private String isRunningString = "Stop Logging";
-    private String isNotRunningString = "Start Logging";
+    private final String isRunningString = "Stop Logging";
+    private final String isNotRunningString = "Start Logging";
 
-    EditText textInput;
-    Button startStopButton;
+    private EditText textInput;
+    private Button startStopButton;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-//        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
-//        setSupportActionBar(toolbar);
 
         isServiceRunning = isMyServiceRunning(SensorLoggerService.class);
 
@@ -104,7 +87,7 @@ public class MainActivity extends AppCompatActivity {
         }
         if (!notGrantedPerms.isEmpty()) {
             String[] permsToRequest = notGrantedPerms.toArray(new String[notGrantedPerms.size()]);
-            requestPermissions(permsToRequest, 200);
+            requestPermissions(permsToRequest, PERMISSION_REQUEST_ID);
         }
     }
 
@@ -130,7 +113,7 @@ public class MainActivity extends AppCompatActivity {
     public String createFileName(String baseName) {
         SimpleDateFormat df = new SimpleDateFormat("yyyyMMddHHmmss");
         String timePrefix =  df.format(new Date());
-        return timePrefix + "-" + baseName + "-" + fileSuffix;
+        return (timePrefix + "-" + baseName + "-" + fileSuffix).replace(" ", "");
     }
 
     public void stopLoggingService() {
@@ -146,27 +129,5 @@ public class MainActivity extends AppCompatActivity {
         } else {
             startStopButton.setText(isNotRunningString);
         }
-    }
-
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_main, menu);
-        return true;
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
-
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
-        }
-
-        return super.onOptionsItemSelected(item);
     }
 }

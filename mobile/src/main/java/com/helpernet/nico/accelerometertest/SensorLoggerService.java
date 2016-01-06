@@ -31,6 +31,8 @@ import java.util.Arrays;
  */
 public class SensorLoggerService extends Service implements SensorEventListener {
 
+    static String filePath = Environment.getExternalStorageDirectory().getPath() + "/sensorLogger/";
+
     private final String TAG = "SensorLoggerService";
 
     SensorManager sensorManager = null;
@@ -125,7 +127,7 @@ public class SensorLoggerService extends Service implements SensorEventListener 
     }
 
     public void createLogFile(String fileName) {
-        File dataLogDir = new File(Environment.getExternalStorageDirectory().getPath() + "/sensorLogger/");
+        File dataLogDir = new File(filePath);
         dataLogDir.mkdirs();
         dataLogFile = new File(dataLogDir, fileName + ".csv");
         if (!dataLogFile.exists()) {

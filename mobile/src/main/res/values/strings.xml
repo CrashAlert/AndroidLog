@@ -5,5 +5,6 @@
     <string name="yAcc">y:</string>
     <string name="zAcc">z:</string>
     <string name="startStopButton">Start Logging</string>
+    <string name="submitButton">Send Log Files</string>
     <string name="initialFileName">dataLogName</string>
 </resources>

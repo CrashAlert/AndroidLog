@@ -40,6 +40,7 @@ public class MainActivity extends AppCompatActivity {
 
     private EditText textInput;
     private Button startStopButton;
+    private Button submitButton;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -48,6 +49,7 @@ public class MainActivity extends AppCompatActivity {
 
         isServiceRunning = isMyServiceRunning(SensorLoggerService.class);
 
+        submitButton = (Button) findViewById(R.id.submit_button);
         startStopButton = (Button) findViewById(R.id.start_stop_button);
         setButtonText();
         textInput = (EditText) findViewById(R.id.text_input);
@@ -61,6 +63,13 @@ public class MainActivity extends AppCompatActivity {
                     startLoggingService(textInput.getText().toString());
                 }
                 setButtonText();
+            }
+        });
+
+        submitButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Uploader.sendAllStoredRides();
             }
         });
 

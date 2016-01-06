@@ -16,6 +16,7 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.IBinder;
+import android.os.SystemClock;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.util.Log;
@@ -174,49 +175,34 @@ public class SensorLoggerService extends Service implements SensorEventListener 
     @Override
     public void onSensorChanged(SensorEvent event) {
         Sensor sensor = event.sensor;
+        // TODO: Compare event.timestamp with SystemClock.elapsedRealtimeNanos()
         SensorData data = new SensorData(event.timestamp);
-        float x, y, z;
 
         switch (sensor.getType()) {
             case Sensor.TYPE_ACCELEROMETER:
-                x = event.values[0];
-                y = event.values[1];
-                z = event.values[2];
-                data.setAcc_x(x);
-                data.setAcc_y(y);
-                data.setAcc_z(z);
+                data.setAcc_x(event.values[0]);
+                data.setAcc_y(event.values[1]);
+                data.setAcc_z(event.values[2]);
                 break;
             case Sensor.TYPE_MAGNETIC_FIELD:
-                x = event.values[0];
-                y = event.values[1];
-                z = event.values[2];
-                data.setMag_x(x);
-                data.setMag_y(y);
-                data.setMag_z(z);
+                data.setMag_x(event.values[0]);
+                data.setMag_y(event.values[1]);
+                data.setMag_z(event.values[2]);
                 break;
             case Sensor.TYPE_GYROSCOPE:
-                x = event.values[0];
-                y = event.values[1];
-                z = event.values[2];
-                data.setGyr_x(x);
-                data.setGyr_y(y);
-                data.setGyr_z(z);
+                data.setGyr_x(event.values[0]);
+                data.setGyr_y(event.values[1]);
+                data.setGyr_z(event.values[2]);
                 break;
             case Sensor.TYPE_ORIENTATION:
-                x = event.values[0];
-                y = event.values[1];
-                z = event.values[2];
-                data.setRot_x(x);
-                data.setRot_y(y);
-                data.setRot_z(z);
+                data.setRot_x(event.values[0]);
+                data.setRot_y(event.values[1]);
+                data.setRot_z(event.values[2]);
                 break;
             case Sensor.TYPE_LINEAR_ACCELERATION:
-                x = event.values[0];
-                y = event.values[1];
-                z = event.values[2];
-                data.setLin_acc_x(x);
-                data.setLin_acc_y(y);
-                data.setLin_acc_z(z);
+                data.setLin_acc_x(event.values[0]);
+                data.setLin_acc_y(event.values[1]);
+                data.setLin_acc_z(event.values[2]);
                 break;
             case Sensor.TYPE_PRESSURE:
                 data.setPressure(event.values[0]);
@@ -232,7 +218,7 @@ public class SensorLoggerService extends Service implements SensorEventListener 
     }
 
     public void handleLocation(Location location) {
-        SensorData data = new SensorData(location.getTime());
+        SensorData data = new SensorData(location.getElapsedRealtimeNanos());
 
         data.setLat(location.getLatitude());
         data.setLng(location.getLongitude());

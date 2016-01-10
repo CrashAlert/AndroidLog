@@ -31,11 +31,11 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 
-/**
- * Created by nico on 29/12/15.
- */
+
 public class SensorLoggerService extends Service implements
         SensorEventListener, ConnectionCallbacks, OnConnectionFailedListener, LocationListener {
+
+    static String filePath = Environment.getExternalStorageDirectory().getPath() + "/sensorLogger/";
 
     public static final long UPDATE_INTERVAL_IN_MILLISECONDS = 1000;
     public static final long FASTEST_UPDATE_INTERVAL = 500;
@@ -44,13 +44,12 @@ public class SensorLoggerService extends Service implements
     protected Location initialLocation;
     protected GoogleApiClient mGoogleApiClient;
 
-    static String filePath = Environment.getExternalStorageDirectory().getPath() + "/sensorLogger/";
-
     private final String TAG = "SensorLoggerService";
 
-    SensorManager sensorManager = null;
+    private SensorManager sensorManager = null;
 
     private File dataLogFile = null;
+
 
     private final int[] sensorTypes = new int[]{
             Sensor.TYPE_ACCELEROMETER,
@@ -61,11 +60,13 @@ public class SensorLoggerService extends Service implements
             Sensor.TYPE_ORIENTATION
     };
 
+
     @Nullable
     @Override
     public IBinder onBind(Intent intent) {
         return null;
     }
+
 
     @Override
     public void onCreate() {
@@ -86,6 +87,7 @@ public class SensorLoggerService extends Service implements
         }
     }
 
+
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         if (intent != null) {
@@ -96,6 +98,7 @@ public class SensorLoggerService extends Service implements
         }
         return START_STICKY;
     }
+
 
     @Override
     public void onDestroy() {
@@ -115,6 +118,7 @@ public class SensorLoggerService extends Service implements
             return;
         }
     }
+
 
     public void createLogFile(String fileName) {
         File dataLogDir = new File(filePath);
@@ -157,9 +161,11 @@ public class SensorLoggerService extends Service implements
         }
     }
 
+
     public void unregisterSensors() {
         sensorManager.unregisterListener(this);
     }
+
 
     @Override
     public void onSensorChanged(SensorEvent event) {
@@ -206,6 +212,7 @@ public class SensorLoggerService extends Service implements
         new StoreStringTask().execute(csvLine);
     }
 
+
     public void handleLocation(Location location) {
         SensorData data = new SensorData(location.getElapsedRealtimeNanos());
 
@@ -222,6 +229,7 @@ public class SensorLoggerService extends Service implements
         new StoreStringTask().execute(dataString);
     }
 
+
     private class StoreStringTask extends AsyncTask<String, Void, Void> {
 
         @Override
@@ -235,6 +243,7 @@ public class SensorLoggerService extends Service implements
             return null;
         }
 
+
         private void storeSensorData(String line) {
             try {
                 BufferedWriter buf = new BufferedWriter(new FileWriter(dataLogFile, true));
@@ -247,6 +256,7 @@ public class SensorLoggerService extends Service implements
             }
         }
     }
+
 
     @Override
     public void onAccuracyChanged(Sensor sensor, int accuracy) {
@@ -320,12 +330,14 @@ public class SensorLoggerService extends Service implements
         handleLocation(location);
     }
 
+
     @Override
     public void onConnectionSuspended(int cause) {
         Log.i(TAG, "Connection suspended");
         mGoogleApiClient.connect();
     }
 
+    
     @Override
     public void onConnectionFailed(ConnectionResult result) {
         Log.i(TAG, "Connection failed: ConnectionResult.getErrorCode() = " + result.getErrorCode());

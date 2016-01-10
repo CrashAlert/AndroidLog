@@ -10,27 +10,39 @@ import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.location.Location;
-import android.location.LocationListener;
-import android.location.LocationManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.IBinder;
-import android.os.SystemClock;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.util.Log;
+
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.common.api.GoogleApiClient.ConnectionCallbacks;
+import com.google.android.gms.common.api.GoogleApiClient.OnConnectionFailedListener;
+import com.google.android.gms.location.LocationListener;
+import com.google.android.gms.location.LocationRequest;
+import com.google.android.gms.location.LocationServices;
 
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.Arrays;
 
 /**
  * Created by nico on 29/12/15.
  */
-public class SensorLoggerService extends Service implements SensorEventListener {
+public class SensorLoggerService extends Service implements
+        SensorEventListener, ConnectionCallbacks, OnConnectionFailedListener, LocationListener {
+
+    public static final long UPDATE_INTERVAL_IN_MILLISECONDS = 1000;
+    public static final long FASTEST_UPDATE_INTERVAL = 500;
+
+    protected LocationRequest mLocationRequest;
+    protected Location initialLocation;
+    protected GoogleApiClient mGoogleApiClient;
 
     static String filePath = Environment.getExternalStorageDirectory().getPath() + "/sensorLogger/";
 
@@ -49,24 +61,6 @@ public class SensorLoggerService extends Service implements SensorEventListener 
             Sensor.TYPE_ORIENTATION
     };
 
-    LocationManager locationManager = null;
-
-    LocationListener locationListener = new LocationListener() {
-        public void onLocationChanged(Location location) {
-            // Called when a new location is found by the network location provider.
-            handleLocation(location);
-        }
-
-        public void onStatusChanged(String provider, int status, Bundle extras) {
-        }
-
-        public void onProviderEnabled(String provider) {
-        }
-
-        public void onProviderDisabled(String provider) {
-        }
-    };
-
     @Nullable
     @Override
     public IBinder onBind(Intent intent) {
@@ -75,10 +69,10 @@ public class SensorLoggerService extends Service implements SensorEventListener 
 
     @Override
     public void onCreate() {
-        locationManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
         sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
-
+        buildGoogleApiClient();
         registerSensors();
+
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             // TODO: Consider calling
             //    ActivityCompat#requestPermissions
@@ -90,12 +84,6 @@ public class SensorLoggerService extends Service implements SensorEventListener 
             Log.e(TAG, "No permissions for accessing location");
             return;
         }
-
-        int minTime = 100;
-        int minDistance = 10;
-
-        locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, minTime, minDistance, locationListener);
-        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, minTime, minDistance, locationListener);
     }
 
     @Override
@@ -113,6 +101,8 @@ public class SensorLoggerService extends Service implements SensorEventListener 
     public void onDestroy() {
         super.onDestroy();
         unregisterSensors();
+        stopLocationUpdates();
+
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             // TODO: Consider calling
             //    ActivityCompat#requestPermissions
@@ -124,7 +114,6 @@ public class SensorLoggerService extends Service implements SensorEventListener 
             Log.e(TAG, "No permissions for accessing location");
             return;
         }
-        locationManager.removeUpdates(locationListener);
     }
 
     public void createLogFile(String fileName) {
@@ -262,5 +251,84 @@ public class SensorLoggerService extends Service implements SensorEventListener 
     @Override
     public void onAccuracyChanged(Sensor sensor, int accuracy) {
 
+    }
+
+
+    /**
+     * Builds a GoogleApiClient
+     */
+    protected synchronized void buildGoogleApiClient() {
+        Log.i(TAG, "Building GoogleApiClient");
+        mGoogleApiClient = new GoogleApiClient.Builder(this)
+                .addConnectionCallbacks(this)
+                .addOnConnectionFailedListener(this)
+                .addApi(LocationServices.API)
+                .build();
+        createLocationRequest();
+    }
+
+
+    /**
+     * Sets up the location request
+     */
+    protected void createLocationRequest() {
+        mLocationRequest = new LocationRequest();
+        mLocationRequest.setInterval(UPDATE_INTERVAL_IN_MILLISECONDS);
+        mLocationRequest.setFastestInterval(FASTEST_UPDATE_INTERVAL);
+        mLocationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+    }
+
+
+    /**
+     * Requests location updates from the FusedLocationApi.
+     */
+    protected void startLocationUpdates() {
+        LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, mLocationRequest, this);
+    }
+
+
+    /**
+     * Removes location updates from the FusedLocationApi.
+     */
+    protected void stopLocationUpdates() {
+        LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, this);
+    }
+
+
+    /**
+     * Runs when a GoogleApiClient object successfully connects.
+     */
+    @Override
+    public void onConnected(Bundle connectionHint) {
+        Log.i(TAG, "Connected to GoogleApiClient");
+
+        // get last known location for first data point
+        if (initialLocation == null) {
+            initialLocation = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
+            handleLocation(initialLocation);
+        }
+
+        startLocationUpdates();
+    }
+
+
+    /**
+     * Callback that fires when the location changes.
+     */
+    @Override
+    public void onLocationChanged(Location location) {
+        handleLocation(location);
+    }
+
+    @Override
+    public void onConnectionSuspended(int cause) {
+        Log.i(TAG, "Connection suspended");
+        mGoogleApiClient.connect();
+    }
+
+    @Override
+    public void onConnectionFailed(ConnectionResult result) {
+        Log.i(TAG, "Connection failed: ConnectionResult.getErrorCode() = " + result.getErrorCode());
+        mGoogleApiClient.connect();
     }
 }

@@ -78,53 +78,6 @@ public class SensorData {
     private Integer cycling = null;
     private Integer unknown = null;
 
-    public Integer getUnknown() {
-        return unknown;
-    }
-
-    public void setUnknown(Integer unknown) {
-        this.unknown = unknown;
-    }
-
-    public Integer getStation() {
-        return station;
-    }
-
-    public void setStation(Integer station) {
-        this.station = station;
-    }
-
-    public Integer getRun() {
-        return run;
-    }
-
-    public void setRun(Integer run) {
-        this.run = run;
-    }
-
-    public Integer getWalk() {
-        return walk;
-    }
-
-    public void setWalk(Integer walk) {
-        this.walk = walk;
-    }
-
-    public Integer getAuto() {
-        return auto;
-    }
-
-    public void setAuto(Integer auto) {
-        this.auto = auto;
-    }
-
-    public Integer getCycling() {
-        return cycling;
-    }
-
-    public void setCycling(Integer cycling) {
-        this.cycling = cycling;
-    }
 
     public SensorData(long timestamp) {
         this.timestamp = timestamp;
@@ -410,5 +363,53 @@ public class SensorData {
 
     public void setTimestamp(long timestamp) {
         this.timestamp = timestamp;
+    }
+
+    public Integer getUnknown() {
+        return unknown;
+    }
+
+    public void setUnknown(Integer unknown) {
+        this.unknown = unknown;
+    }
+
+    public Integer getStation() {
+        return station;
+    }
+
+    public void setStation(Integer station) {
+        this.station = station;
+    }
+
+    public Integer getRun() {
+        return run;
+    }
+
+    public void setRun(Integer run) {
+        this.run = run;
+    }
+
+    public Integer getWalk() {
+        return walk;
+    }
+
+    public void setWalk(Integer walk) {
+        this.walk = walk;
+    }
+
+    public Integer getAuto() {
+        return auto;
+    }
+
+    public void setAuto(Integer auto) {
+        this.auto = auto;
+    }
+
+    public Integer getCycling() {
+        return cycling;
+    }
+
+    public void setCycling(Integer cycling) {
+        this.cycling = cycling;
     }
 }

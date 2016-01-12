@@ -14,6 +14,7 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.IBinder;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.util.Log;
@@ -35,7 +36,7 @@ import java.io.IOException;
 public class SensorLoggerService extends Service implements
         SensorEventListener, ConnectionCallbacks, OnConnectionFailedListener, LocationListener {
 
-    static String filePath = Environment.getExternalStorageDirectory().getPath() + "/sensorLogger/";
+    public static final String FILE_PATH = Environment.getExternalStorageDirectory().getPath() + "/sensorLogger/";
 
     public static final long UPDATE_INTERVAL_IN_MILLISECONDS = 1000;
     public static final long FASTEST_UPDATE_INTERVAL = 500;
@@ -43,6 +44,7 @@ public class SensorLoggerService extends Service implements
     protected LocationRequest mLocationRequest;
     protected Location initialLocation;
     protected GoogleApiClient mGoogleApiClient;
+    protected boolean isGoogleApiConnected = false;
 
     private final String TAG = "SensorLoggerService";
 
@@ -73,18 +75,6 @@ public class SensorLoggerService extends Service implements
         sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
         buildGoogleApiClient();
         registerSensors();
-
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            // TODO: Consider calling
-            //    ActivityCompat#requestPermissions
-            // here to request the missing permissions, and then overriding
-            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-            //                                          int[] grantResults)
-            // to handle the case where the user grants the permission. See the documentation
-            // for ActivityCompat#requestPermissions for more details.
-            Log.e(TAG, "No permissions for accessing location");
-            return;
-        }
     }
 
 
@@ -92,10 +82,10 @@ public class SensorLoggerService extends Service implements
     public int onStartCommand(Intent intent, int flags, int startId) {
         if (intent != null) {
             Bundle extras = intent.getExtras();
-            Log.e(TAG, "Intent got no extras");
             String logFileName = extras.getString("fileName");
             createLogFile(logFileName);
         }
+        mGoogleApiClient.connect();
         return START_STICKY;
     }
 
@@ -104,31 +94,20 @@ public class SensorLoggerService extends Service implements
     public void onDestroy() {
         super.onDestroy();
         unregisterSensors();
-        stopLocationUpdates();
-
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            // TODO: Consider calling
-            //    ActivityCompat#requestPermissions
-            // here to request the missing permissions, and then overriding
-            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-            //                                          int[] grantResults)
-            // to handle the case where the user grants the permission. See the documentation
-            // for ActivityCompat#requestPermissions for more details.
-            Log.e(TAG, "No permissions for accessing location");
-            return;
+        if (isGoogleApiConnected) {
+            stopLocationUpdates();
         }
     }
 
 
     public void createLogFile(String fileName) {
-        File dataLogDir = new File(filePath);
+        File dataLogDir = new File(FILE_PATH);
         dataLogDir.mkdirs();
         dataLogFile = new File(dataLogDir, fileName + ".csv");
         if (!dataLogFile.exists()) {
             try {
                 dataLogFile.createNewFile();
-            }
-            catch (IOException e) {
+            } catch (IOException e) {
                 Log.e(TAG, "Couldnt create LogFile: " + e.toString());
                 // TODO Auto-generated catch block
                 e.printStackTrace();
@@ -263,6 +242,15 @@ public class SensorLoggerService extends Service implements
 
     }
 
+    /**
+     * Checks if this app has the Permissions to access the device location
+     * @return boolean telling if permission was granted
+     */
+    private boolean hasLocationPermissions() {
+        return ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)   == PackageManager.PERMISSION_GRANTED &&
+               ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED;
+    }
+
 
     /**
      * Builds a GoogleApiClient
@@ -293,7 +281,10 @@ public class SensorLoggerService extends Service implements
      * Requests location updates from the FusedLocationApi.
      */
     protected void startLocationUpdates() {
-        LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, mLocationRequest, this);
+        if (hasLocationPermissions()) {
+            LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, mLocationRequest, this);
+        }
+
     }
 
 
@@ -312,8 +303,10 @@ public class SensorLoggerService extends Service implements
     public void onConnected(Bundle connectionHint) {
         Log.i(TAG, "Connected to GoogleApiClient");
 
+        isGoogleApiConnected = true;
+
         // get last known location for first data point
-        if (initialLocation == null) {
+        if (initialLocation == null && hasLocationPermissions()) {
             initialLocation = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
             handleLocation(initialLocation);
         }
@@ -339,7 +332,7 @@ public class SensorLoggerService extends Service implements
 
     
     @Override
-    public void onConnectionFailed(ConnectionResult result) {
+    public void onConnectionFailed(@NonNull ConnectionResult result) {
         Log.i(TAG, "Connection failed: ConnectionResult.getErrorCode() = " + result.getErrorCode());
         mGoogleApiClient.connect();
     }

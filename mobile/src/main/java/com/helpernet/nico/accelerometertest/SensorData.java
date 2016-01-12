@@ -92,12 +92,9 @@ public class SensorData {
         str += "," + magString();
         str += "," + gnsString();
         str += "," + presString();
-        str += "," + verboseString();
+        str += "," + stateString();
+        str += ",";
         return str;
-    }
-
-    private String verboseString() {
-        return ",,,,,,";
     }
 
     private String accString() {
@@ -363,6 +360,17 @@ public class SensorData {
 
     public void setTimestamp(long timestamp) {
         this.timestamp = timestamp;
+    }
+
+    private String stateString() {
+        String res = "";
+        res += station != null ? Float.toString(station) : ",";
+        res += run != null ? Float.toString(run) : ",";
+        res += walk != null ? Float.toString(walk) : ",";
+        res += auto != null ? Float.toString(auto) : ",";
+        res += cycling != null ? Float.toString(cycling) : ",";
+        res += unknown != null ? Float.toString(unknown) : "";
+        return res;
     }
 
     public Integer getUnknown() {

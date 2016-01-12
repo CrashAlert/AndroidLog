@@ -1,9 +1,13 @@
 package com.helpernet.nico.accelerometertest;
 
 import android.Manifest;
+import android.app.IntentService;
+import android.app.PendingIntent;
 import android.app.Service;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
@@ -17,12 +21,17 @@ import android.os.IBinder;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.GoogleApiClient.ConnectionCallbacks;
 import com.google.android.gms.common.api.GoogleApiClient.OnConnectionFailedListener;
+import com.google.android.gms.common.api.ResultCallback;
+import com.google.android.gms.common.api.Status;
+import com.google.android.gms.location.ActivityRecognition;
+import com.google.android.gms.location.DetectedActivity;
 import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
@@ -31,20 +40,23 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.ArrayList;
 
 
 public class SensorLoggerService extends Service implements
-        SensorEventListener, ConnectionCallbacks, OnConnectionFailedListener, LocationListener {
+         SensorEventListener, ConnectionCallbacks, OnConnectionFailedListener, LocationListener, ResultCallback<Status> {
 
     public static final String FILE_PATH = Environment.getExternalStorageDirectory().getPath() + "/sensorLogger/";
 
     public static final long UPDATE_INTERVAL_IN_MILLISECONDS = 1000;
     public static final long FASTEST_UPDATE_INTERVAL = 500;
+    private static final long ACTIVITY_RECOGNITION_INTERVAL = 1000;
 
     protected LocationRequest mLocationRequest;
     protected Location initialLocation;
     protected GoogleApiClient mGoogleApiClient;
-    protected boolean isGoogleApiConnected = false;
+
+    protected ActivityDetectionBroadcastReceiver mBroadcastReceiver;
 
     private final String TAG = "SensorLoggerService";
 
@@ -73,6 +85,7 @@ public class SensorLoggerService extends Service implements
     @Override
     public void onCreate() {
         sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
+        mBroadcastReceiver = new ActivityDetectionBroadcastReceiver();
         buildGoogleApiClient();
         registerSensors();
     }
@@ -85,6 +98,10 @@ public class SensorLoggerService extends Service implements
             String logFileName = extras.getString("fileName");
             createLogFile(logFileName);
         }
+
+        LocalBroadcastManager.getInstance(this).registerReceiver(mBroadcastReceiver,
+                new IntentFilter(DetectedActivitiesIntentService.INTENT_NAME));
+
         mGoogleApiClient.connect();
         return START_STICKY;
     }
@@ -94,8 +111,10 @@ public class SensorLoggerService extends Service implements
     public void onDestroy() {
         super.onDestroy();
         unregisterSensors();
-        if (isGoogleApiConnected) {
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(mBroadcastReceiver);
+        if (mGoogleApiClient.isConnected()) {
             stopLocationUpdates();
+            stopActivityUpdates();
         }
     }
 
@@ -243,6 +262,89 @@ public class SensorLoggerService extends Service implements
     }
 
     /**
+     *
+     * @param status
+     */
+    @Override
+    public void onResult(@NonNull Status status) {
+        if (status.isSuccess()) {
+            Log.i(TAG, "Status message: " + status.getStatusMessage());
+        }
+    }
+
+    /**
+     * Gets a PendingIntent to be sent for each activity detection.
+     */
+    private PendingIntent getActivityDetectionPendingIntent() {
+        Intent intent = new Intent(this, DetectedActivitiesIntentService.class);
+
+        // We use FLAG_UPDATE_CURRENT so that we get the same pending intent back when calling
+        // requestActivityUpdates() and removeActivityUpdates().
+        return PendingIntent.getService(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+    }
+
+    protected void startActivityUpdates() {
+        ActivityRecognition.ActivityRecognitionApi.requestActivityUpdates(mGoogleApiClient, ACTIVITY_RECOGNITION_INTERVAL, getActivityDetectionPendingIntent()).setResultCallback(this);
+    }
+
+    protected void stopActivityUpdates() {
+        ActivityRecognition.ActivityRecognitionApi.removeActivityUpdates(mGoogleApiClient, getActivityDetectionPendingIntent());
+    }
+
+    private void handleDetectedActivitiesList(ArrayList<DetectedActivity> detectedActivities, long timestamp) {
+        SensorData data = new SensorData(timestamp);
+        for (DetectedActivity da : detectedActivities) {
+            int confidence = da.getConfidence();
+            switch (da.getType()) {
+                case DetectedActivity.STILL:
+                    data.setStation(confidence);
+                    break;
+                case DetectedActivity.RUNNING:
+                    data.setRun(confidence);
+                    break;
+                case DetectedActivity.WALKING:
+                    data.setWalk(confidence);
+                    break;
+                case DetectedActivity.IN_VEHICLE:
+                    data.setAuto(confidence);
+                    break;
+                case DetectedActivity.ON_BICYCLE:
+                    data.setCycling(confidence);
+                    break;
+                case DetectedActivity.UNKNOWN:
+                    data.setUnknown(confidence);
+                    break;
+                default:
+                    Log.d(TAG, "Unhandled activity: "  + da.describeContents() + " with type: " + da.getType());
+
+            }
+        }
+        String dataString = data.toString();
+
+        Log.d(TAG, "Activity: " + dataString);
+
+        new StoreStringTask().execute(dataString);
+    }
+
+    /**
+     * Receiver for intents sent by DetectedActivitiesIntentService via a sendBroadcast().
+     * Receives a list of one or more DetectedActivity objects associated with the current state of
+     * the device.
+     */
+    public class ActivityDetectionBroadcastReceiver extends BroadcastReceiver {
+        protected static final String TAG = "activity-detection-response-receiver";
+
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            ArrayList<DetectedActivity> updatedActivities =
+                    intent.getParcelableArrayListExtra(DetectedActivitiesIntentService.EXTRA_DETECTED_ACTIVITIES);
+            long timestamp = intent.getLongExtra(DetectedActivitiesIntentService.EXTRA_TIME, System.currentTimeMillis());
+            handleDetectedActivitiesList(updatedActivities, timestamp);
+        }
+    }
+
+
+    /**
      * Checks if this app has the Permissions to access the device location
      * @return boolean telling if permission was granted
      */
@@ -261,6 +363,7 @@ public class SensorLoggerService extends Service implements
                 .addConnectionCallbacks(this)
                 .addOnConnectionFailedListener(this)
                 .addApi(LocationServices.API)
+                .addApi(ActivityRecognition.API)
                 .build();
         createLocationRequest();
     }
@@ -303,8 +406,6 @@ public class SensorLoggerService extends Service implements
     public void onConnected(Bundle connectionHint) {
         Log.i(TAG, "Connected to GoogleApiClient");
 
-        isGoogleApiConnected = true;
-
         // get last known location for first data point
         if (initialLocation == null && hasLocationPermissions()) {
             initialLocation = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
@@ -312,6 +413,7 @@ public class SensorLoggerService extends Service implements
         }
 
         startLocationUpdates();
+        startActivityUpdates();
     }
 
 

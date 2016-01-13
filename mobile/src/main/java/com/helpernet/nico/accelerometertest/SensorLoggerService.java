@@ -294,7 +294,7 @@ public class SensorLoggerService extends Service implements
     private void handleDetectedActivitiesList(ArrayList<DetectedActivity> detectedActivities, long timestamp) {
         SensorData data = new SensorData(timestamp);
         for (DetectedActivity da : detectedActivities) {
-            int confidence = da.getConfidence();
+            float confidence = da.getConfidence() / 100;
             switch (da.getType()) {
                 case DetectedActivity.STILL:
                     data.setStation(confidence);

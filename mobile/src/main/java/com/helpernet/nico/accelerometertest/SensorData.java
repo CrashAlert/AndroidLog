@@ -71,12 +71,12 @@ public class SensorData {
 
     private Float pressure = null;
 
-    private Integer station = null;
-    private Integer run = null;
-    private Integer walk = null;
-    private Integer auto = null;
-    private Integer cycling = null;
-    private Integer unknown = null;
+    private Float station = null;
+    private Float run = null;
+    private Float walk = null;
+    private Float auto = null;
+    private Float cycling = null;
+    private Float unknown = null;
 
 
     public SensorData(long timestamp) {
@@ -373,51 +373,27 @@ public class SensorData {
         return res;
     }
 
-    public Integer getUnknown() {
-        return unknown;
-    }
-
-    public void setUnknown(Integer unknown) {
-        this.unknown = unknown;
-    }
-
-    public Integer getStation() {
-        return station;
-    }
-
-    public void setStation(Integer station) {
+    public void setStation(Float station) {
         this.station = station;
     }
 
-    public Integer getRun() {
-        return run;
-    }
-
-    public void setRun(Integer run) {
+    public void setRun(Float run) {
         this.run = run;
     }
 
-    public Integer getWalk() {
-        return walk;
-    }
-
-    public void setWalk(Integer walk) {
+    public void setWalk(Float walk) {
         this.walk = walk;
     }
 
-    public Integer getAuto() {
-        return auto;
-    }
-
-    public void setAuto(Integer auto) {
+    public void setAuto(Float auto) {
         this.auto = auto;
     }
 
-    public Integer getCycling() {
-        return cycling;
+    public void setCycling(Float cycling) {
+        this.cycling = cycling;
     }
 
-    public void setCycling(Integer cycling) {
-        this.cycling = cycling;
+    public void setUnknown(Float unknown) {
+        this.unknown = unknown;
     }
 }

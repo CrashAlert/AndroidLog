@@ -1,5 +1,7 @@
 package com.helpernet.nico.accelerometertest;
 
+import android.content.Intent;
+
 /**
  * Created by nico on 30/12/15.
  */
@@ -69,6 +71,14 @@ public class SensorData {
 
     private Float pressure = null;
 
+    private Float station = null;
+    private Float run = null;
+    private Float walk = null;
+    private Float auto = null;
+    private Float cycling = null;
+    private Float unknown = null;
+
+
     public SensorData(long timestamp) {
         this.timestamp = timestamp;
     }
@@ -82,12 +92,9 @@ public class SensorData {
         str += "," + magString();
         str += "," + gnsString();
         str += "," + presString();
-        str += "," + verboseString();
+        str += "," + stateString();
+        str += ",";
         return str;
-    }
-
-    private String verboseString() {
-        return ",,,,,,";
     }
 
     private String accString() {
@@ -353,5 +360,40 @@ public class SensorData {
 
     public void setTimestamp(long timestamp) {
         this.timestamp = timestamp;
+    }
+
+    private String stateString() {
+        String res = "";
+        res += station != null ? Float.toString(station) : ",";
+        res += run != null ? Float.toString(run) : ",";
+        res += walk != null ? Float.toString(walk) : ",";
+        res += auto != null ? Float.toString(auto) : ",";
+        res += cycling != null ? Float.toString(cycling) : ",";
+        res += unknown != null ? Float.toString(unknown) : "";
+        return res;
+    }
+
+    public void setStation(Float station) {
+        this.station = station;
+    }
+
+    public void setRun(Float run) {
+        this.run = run;
+    }
+
+    public void setWalk(Float walk) {
+        this.walk = walk;
+    }
+
+    public void setAuto(Float auto) {
+        this.auto = auto;
+    }
+
+    public void setCycling(Float cycling) {
+        this.cycling = cycling;
+    }
+
+    public void setUnknown(Float unknown) {
+        this.unknown = unknown;
     }
 }

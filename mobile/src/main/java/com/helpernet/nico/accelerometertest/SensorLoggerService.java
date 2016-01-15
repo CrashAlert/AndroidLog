@@ -268,7 +268,7 @@ public class SensorLoggerService extends Service implements
     @Override
     public void onResult(@NonNull Status status) {
         if (status.isSuccess()) {
-            Log.i(TAG, "Status message: " + status.getStatusMessage());
+            Log.i(TAG, "Successfully connected to Activity Recognition");
         }
     }
 
@@ -294,7 +294,7 @@ public class SensorLoggerService extends Service implements
     private void handleDetectedActivitiesList(ArrayList<DetectedActivity> detectedActivities, long timestamp) {
         SensorData data = new SensorData(timestamp);
         for (DetectedActivity da : detectedActivities) {
-            float confidence = da.getConfidence() / 100;
+            Float confidence = da.getConfidence() / 100f;
             switch (da.getType()) {
                 case DetectedActivity.STILL:
                     data.setStation(confidence);
@@ -315,7 +315,7 @@ public class SensorLoggerService extends Service implements
                     data.setUnknown(confidence);
                     break;
                 default:
-                    Log.d(TAG, "Unhandled activity: "  + da.describeContents() + " with type: " + da.getType());
+                    Log.d(TAG, "Unhandled activity: "  + confidence + " with type: " + da.getType());
 
             }
         }

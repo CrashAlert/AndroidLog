@@ -1,12 +1,17 @@
 package com.helpernet.nico.accelerometertest;
 
 import android.content.Intent;
+import android.util.Log;
+
+import java.util.Objects;
 
 /**
  * Created by nico on 30/12/15.
  */
 
 public class SensorData {
+
+    static final String TAG = "SensorData";
 
     public static String header = "" +
             "time," +
@@ -364,11 +369,11 @@ public class SensorData {
 
     private String stateString() {
         String res = "";
-        res += station != null ? Float.toString(station) : ",";
-        res += run != null ? Float.toString(run) : ",";
-        res += walk != null ? Float.toString(walk) : ",";
-        res += auto != null ? Float.toString(auto) : ",";
-        res += cycling != null ? Float.toString(cycling) : ",";
+        res += station != null ? Float.toString(station) + "," : ",";
+        res += run != null ? Float.toString(run) + "," : ",";
+        res += walk != null ? Float.toString(walk) + "," : ",";
+        res += auto != null ? Float.toString(auto) + "," : ",";
+        res += cycling != null ? Float.toString(cycling) + "," : ",";
         res += unknown != null ? Float.toString(unknown) : "";
         return res;
     }

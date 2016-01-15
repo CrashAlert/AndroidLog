@@ -29,7 +29,7 @@ public class Uploader {
 
     private final static String TAG = "Uploader";
 
-    private final static String BASE_URL = "http://e180cbcb.ngrok.io/store/";
+    private final static String BASE_URL = "http://87.106.89.243:4000/store/";
 
     static List<String> getStoredRides() {
         File[] files = new File(SensorLoggerService.filePath).listFiles();

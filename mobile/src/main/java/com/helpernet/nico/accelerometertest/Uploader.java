@@ -1,24 +1,16 @@
 package com.helpernet.nico.accelerometertest;
 
 
-import android.content.Context;
-import android.net.ConnectivityManager;
 import android.os.AsyncTask;
 import android.util.Log;
-import android.widget.Toast;
 
-import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.net.URLConnection;
-import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -32,7 +24,7 @@ public class Uploader {
     private final static String BASE_URL = "http://87.106.89.243:4000/store/";
 
     static List<String> getStoredRides() {
-        File[] files = new File(SensorLoggerService.filePath).listFiles();
+        File[] files = new File(SensorLoggerService.FILE_PATH).listFiles();
         List<String> fileNames = new ArrayList<>();
         for (File file : files) {
             fileNames.add(file.getName());
@@ -47,7 +39,7 @@ public class Uploader {
     }
 
     static boolean deleteFile(String fileName) {
-        return new File(SensorLoggerService.filePath + fileName).delete();
+        return new File(SensorLoggerService.FILE_PATH + fileName).delete();
     }
 
     static void sendData(String fileName) {
@@ -77,7 +69,7 @@ public class Uploader {
 
         boolean postData(String fileName) throws IOException {
             String name = fileName.replace(".csv", "");
-            BufferedReader reader = new BufferedReader(new FileReader(SensorLoggerService.filePath + fileName));
+            BufferedReader reader = new BufferedReader(new FileReader(SensorLoggerService.FILE_PATH + fileName));
             URL url = new URL(BASE_URL + name);
             HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
             boolean success = false;

@@ -1,44 +1,69 @@
 package com.helpernet.nico.accelerometertest;
 
 import android.Manifest;
+import android.app.IntentService;
+import android.app.PendingIntent;
 import android.app.Service;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.location.Location;
-import android.location.LocationListener;
-import android.location.LocationManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.IBinder;
-import android.os.SystemClock;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
+
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.common.api.GoogleApiClient.ConnectionCallbacks;
+import com.google.android.gms.common.api.GoogleApiClient.OnConnectionFailedListener;
+import com.google.android.gms.common.api.ResultCallback;
+import com.google.android.gms.common.api.Status;
+import com.google.android.gms.location.ActivityRecognition;
+import com.google.android.gms.location.DetectedActivity;
+import com.google.android.gms.location.LocationListener;
+import com.google.android.gms.location.LocationRequest;
+import com.google.android.gms.location.LocationServices;
 
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.Arrays;
+import java.util.ArrayList;
 
-/**
- * Created by nico on 29/12/15.
- */
-public class SensorLoggerService extends Service implements SensorEventListener {
 
-    static String filePath = Environment.getExternalStorageDirectory().getPath() + "/sensorLogger/";
+public class SensorLoggerService extends Service implements
+         SensorEventListener, ConnectionCallbacks, OnConnectionFailedListener, LocationListener, ResultCallback<Status> {
+
+    public static final String FILE_PATH = Environment.getExternalStorageDirectory().getPath() + "/sensorLogger/";
+
+    public static final long UPDATE_INTERVAL_IN_MILLISECONDS = 1000;
+    public static final long FASTEST_UPDATE_INTERVAL = 500;
+    private static final long ACTIVITY_RECOGNITION_INTERVAL = 1000;
+
+    protected LocationRequest mLocationRequest;
+    protected Location initialLocation;
+    protected GoogleApiClient mGoogleApiClient;
+
+    protected ActivityDetectionBroadcastReceiver mBroadcastReceiver;
 
     private final String TAG = "SensorLoggerService";
 
-    SensorManager sensorManager = null;
+    private SensorManager sensorManager = null;
 
     private File dataLogFile = null;
+
 
     private final int[] sensorTypes = new int[]{
             Sensor.TYPE_ACCELEROMETER,
@@ -49,23 +74,6 @@ public class SensorLoggerService extends Service implements SensorEventListener 
             Sensor.TYPE_ORIENTATION
     };
 
-    LocationManager locationManager = null;
-
-    LocationListener locationListener = new LocationListener() {
-        public void onLocationChanged(Location location) {
-            // Called when a new location is found by the network location provider.
-            handleLocation(location);
-        }
-
-        public void onStatusChanged(String provider, int status, Bundle extras) {
-        }
-
-        public void onProviderEnabled(String provider) {
-        }
-
-        public void onProviderDisabled(String provider) {
-        }
-    };
 
     @Nullable
     @Override
@@ -73,69 +81,52 @@ public class SensorLoggerService extends Service implements SensorEventListener 
         return null;
     }
 
+
     @Override
     public void onCreate() {
-        locationManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
         sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
-
+        mBroadcastReceiver = new ActivityDetectionBroadcastReceiver();
+        buildGoogleApiClient();
         registerSensors();
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            // TODO: Consider calling
-            //    ActivityCompat#requestPermissions
-            // here to request the missing permissions, and then overriding
-            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-            //                                          int[] grantResults)
-            // to handle the case where the user grants the permission. See the documentation
-            // for ActivityCompat#requestPermissions for more details.
-            Log.e(TAG, "No permissions for accessing location");
-            return;
-        }
-
-        int minTime = 100;
-        int minDistance = 10;
-
-        locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, minTime, minDistance, locationListener);
-        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, minTime, minDistance, locationListener);
     }
+
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         if (intent != null) {
             Bundle extras = intent.getExtras();
-            Log.e(TAG, "Intent got no extras");
             String logFileName = extras.getString("fileName");
             createLogFile(logFileName);
         }
+
+        LocalBroadcastManager.getInstance(this).registerReceiver(mBroadcastReceiver,
+                new IntentFilter(DetectedActivitiesIntentService.INTENT_NAME));
+
+        mGoogleApiClient.connect();
         return START_STICKY;
     }
+
 
     @Override
     public void onDestroy() {
         super.onDestroy();
         unregisterSensors();
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            // TODO: Consider calling
-            //    ActivityCompat#requestPermissions
-            // here to request the missing permissions, and then overriding
-            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-            //                                          int[] grantResults)
-            // to handle the case where the user grants the permission. See the documentation
-            // for ActivityCompat#requestPermissions for more details.
-            Log.e(TAG, "No permissions for accessing location");
-            return;
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(mBroadcastReceiver);
+        if (mGoogleApiClient.isConnected()) {
+            stopLocationUpdates();
+            stopActivityUpdates();
         }
-        locationManager.removeUpdates(locationListener);
     }
 
+
     public void createLogFile(String fileName) {
-        File dataLogDir = new File(filePath);
+        File dataLogDir = new File(FILE_PATH);
         dataLogDir.mkdirs();
         dataLogFile = new File(dataLogDir, fileName + ".csv");
         if (!dataLogFile.exists()) {
             try {
                 dataLogFile.createNewFile();
-            }
-            catch (IOException e) {
+            } catch (IOException e) {
                 Log.e(TAG, "Couldnt create LogFile: " + e.toString());
                 // TODO Auto-generated catch block
                 e.printStackTrace();
@@ -168,9 +159,11 @@ public class SensorLoggerService extends Service implements SensorEventListener 
         }
     }
 
+
     public void unregisterSensors() {
         sensorManager.unregisterListener(this);
     }
+
 
     @Override
     public void onSensorChanged(SensorEvent event) {
@@ -217,6 +210,7 @@ public class SensorLoggerService extends Service implements SensorEventListener 
         new StoreStringTask().execute(csvLine);
     }
 
+
     public void handleLocation(Location location) {
         SensorData data = new SensorData(location.getElapsedRealtimeNanos());
 
@@ -233,6 +227,7 @@ public class SensorLoggerService extends Service implements SensorEventListener 
         new StoreStringTask().execute(dataString);
     }
 
+
     private class StoreStringTask extends AsyncTask<String, Void, Void> {
 
         @Override
@@ -245,6 +240,7 @@ public class SensorLoggerService extends Service implements SensorEventListener 
             }
             return null;
         }
+
 
         private void storeSensorData(String line) {
             try {
@@ -259,8 +255,187 @@ public class SensorLoggerService extends Service implements SensorEventListener 
         }
     }
 
+
     @Override
     public void onAccuracyChanged(Sensor sensor, int accuracy) {
 
+    }
+
+    /**
+     *
+     * @param status
+     */
+    @Override
+    public void onResult(@NonNull Status status) {
+        if (status.isSuccess()) {
+            Log.i(TAG, "Successfully connected to Activity Recognition");
+        }
+    }
+
+    /**
+     * Gets a PendingIntent to be sent for each activity detection.
+     */
+    private PendingIntent getActivityDetectionPendingIntent() {
+        Intent intent = new Intent(this, DetectedActivitiesIntentService.class);
+
+        // We use FLAG_UPDATE_CURRENT so that we get the same pending intent back when calling
+        // requestActivityUpdates() and removeActivityUpdates().
+        return PendingIntent.getService(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+    }
+
+    protected void startActivityUpdates() {
+        ActivityRecognition.ActivityRecognitionApi.requestActivityUpdates(mGoogleApiClient, ACTIVITY_RECOGNITION_INTERVAL, getActivityDetectionPendingIntent()).setResultCallback(this);
+    }
+
+    protected void stopActivityUpdates() {
+        ActivityRecognition.ActivityRecognitionApi.removeActivityUpdates(mGoogleApiClient, getActivityDetectionPendingIntent());
+    }
+
+    private void handleDetectedActivitiesList(ArrayList<DetectedActivity> detectedActivities, long timestamp) {
+        SensorData data = new SensorData(timestamp);
+        for (DetectedActivity da : detectedActivities) {
+            Float confidence = da.getConfidence() / 100f;
+            switch (da.getType()) {
+                case DetectedActivity.STILL:
+                    data.setStation(confidence);
+                    break;
+                case DetectedActivity.RUNNING:
+                    data.setRun(confidence);
+                    break;
+                case DetectedActivity.WALKING:
+                    data.setWalk(confidence);
+                    break;
+                case DetectedActivity.IN_VEHICLE:
+                    data.setAuto(confidence);
+                    break;
+                case DetectedActivity.ON_BICYCLE:
+                    data.setCycling(confidence);
+                    break;
+                case DetectedActivity.UNKNOWN:
+                    data.setUnknown(confidence);
+                    break;
+                default:
+                    Log.d(TAG, "Unhandled activity: "  + confidence + " with type: " + da.getType());
+
+            }
+        }
+        String dataString = data.toString();
+
+        Log.d(TAG, "Activity: " + dataString);
+
+        new StoreStringTask().execute(dataString);
+    }
+
+    /**
+     * Receiver for intents sent by DetectedActivitiesIntentService via a sendBroadcast().
+     * Receives a list of one or more DetectedActivity objects associated with the current state of
+     * the device.
+     */
+    public class ActivityDetectionBroadcastReceiver extends BroadcastReceiver {
+        protected static final String TAG = "activity-detection-response-receiver";
+
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            ArrayList<DetectedActivity> updatedActivities =
+                    intent.getParcelableArrayListExtra(DetectedActivitiesIntentService.EXTRA_DETECTED_ACTIVITIES);
+            long timestamp = intent.getLongExtra(DetectedActivitiesIntentService.EXTRA_TIME, System.currentTimeMillis());
+            handleDetectedActivitiesList(updatedActivities, timestamp);
+        }
+    }
+
+
+    /**
+     * Checks if this app has the Permissions to access the device location
+     * @return boolean telling if permission was granted
+     */
+    private boolean hasLocationPermissions() {
+        return ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)   == PackageManager.PERMISSION_GRANTED &&
+               ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED;
+    }
+
+
+    /**
+     * Builds a GoogleApiClient
+     */
+    protected synchronized void buildGoogleApiClient() {
+        Log.i(TAG, "Building GoogleApiClient");
+        mGoogleApiClient = new GoogleApiClient.Builder(this)
+                .addConnectionCallbacks(this)
+                .addOnConnectionFailedListener(this)
+                .addApi(LocationServices.API)
+                .addApi(ActivityRecognition.API)
+                .build();
+        createLocationRequest();
+    }
+
+
+    /**
+     * Sets up the location request
+     */
+    protected void createLocationRequest() {
+        mLocationRequest = new LocationRequest();
+        mLocationRequest.setInterval(UPDATE_INTERVAL_IN_MILLISECONDS);
+        mLocationRequest.setFastestInterval(FASTEST_UPDATE_INTERVAL);
+        mLocationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+    }
+
+
+    /**
+     * Requests location updates from the FusedLocationApi.
+     */
+    protected void startLocationUpdates() {
+        if (hasLocationPermissions()) {
+            LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, mLocationRequest, this);
+        }
+
+    }
+
+
+    /**
+     * Removes location updates from the FusedLocationApi.
+     */
+    protected void stopLocationUpdates() {
+        LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, this);
+    }
+
+
+    /**
+     * Runs when a GoogleApiClient object successfully connects.
+     */
+    @Override
+    public void onConnected(Bundle connectionHint) {
+        Log.i(TAG, "Connected to GoogleApiClient");
+
+        // get last known location for first data point
+        if (initialLocation == null && hasLocationPermissions()) {
+            initialLocation = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
+            handleLocation(initialLocation);
+        }
+
+        startLocationUpdates();
+        startActivityUpdates();
+    }
+
+
+    /**
+     * Callback that fires when the location changes.
+     */
+    @Override
+    public void onLocationChanged(Location location) {
+        handleLocation(location);
+    }
+
+
+    @Override
+    public void onConnectionSuspended(int cause) {
+        Log.i(TAG, "Connection suspended");
+        mGoogleApiClient.connect();
+    }
+
+    
+    @Override
+    public void onConnectionFailed(@NonNull ConnectionResult result) {
+        Log.i(TAG, "Connection failed: ConnectionResult.getErrorCode() = " + result.getErrorCode());
+        mGoogleApiClient.connect();
     }
 }

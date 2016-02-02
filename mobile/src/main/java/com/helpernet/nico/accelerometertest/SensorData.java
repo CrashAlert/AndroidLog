@@ -83,6 +83,8 @@ public class SensorData {
     private Float cycling = null;
     private Float unknown = null;
 
+    private boolean accident = false;
+
 
     public SensorData(long timestamp) {
         this.timestamp = timestamp;
@@ -98,6 +100,7 @@ public class SensorData {
         str += "," + gnsString();
         str += "," + presString();
         str += "," + stateString();
+        str += "," + accidentString();
         str += ",";
         return str;
     }
@@ -112,6 +115,15 @@ public class SensorData {
                          Float.toString(acc_z);
             return acc;
         }
+    }
+
+    public Double getOverallAcc() {
+        if (acc_x == null || acc_y == null || acc_z == null) {
+            return null;
+        }
+
+        Float accSquaredSum = acc_x * acc_x + acc_y * acc_y + acc_z * acc_z;
+        return Math.sqrt((double) accSquaredSum);
     }
 
     public Float getAcc_x() {
@@ -400,5 +412,17 @@ public class SensorData {
 
     public void setUnknown(Float unknown) {
         this.unknown = unknown;
+    }
+
+    public boolean isAccident() {
+        return accident;
+    }
+
+    public void setAccident(boolean accident) {
+        this.accident = accident;
+    }
+
+    private String accidentString() {
+        return accident ? "1" : "0";
     }
 }

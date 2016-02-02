@@ -1,7 +1,6 @@
 package com.helpernet.nico.accelerometertest;
 
 import android.Manifest;
-import android.app.IntentService;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.BroadcastReceiver;
@@ -35,6 +34,8 @@ import com.google.android.gms.location.DetectedActivity;
 import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
+import com.helpernet.nico.accelerometertest.accidentdetection.AccidentDetection;
+import com.helpernet.nico.accelerometertest.accidentdetection.StateMachineAlgo;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -51,6 +52,9 @@ public class SensorLoggerService extends Service implements
     public static final long UPDATE_INTERVAL_IN_MILLISECONDS = 1000;
     public static final long FASTEST_UPDATE_INTERVAL = 500;
     private static final long ACTIVITY_RECOGNITION_INTERVAL = 1000;
+
+    public static final String DATA_INTENT_NAME = "DATA_INTENT_NAME";
+    public static final String EXTRA_SENSOR_DATA = "EXTRA_SENSOR_DATA";
 
     protected LocationRequest mLocationRequest;
     protected Location initialLocation;
@@ -74,6 +78,8 @@ public class SensorLoggerService extends Service implements
             Sensor.TYPE_ORIENTATION
     };
 
+    protected AccidentDetection mAccidentDetection;
+
 
     @Nullable
     @Override
@@ -86,6 +92,7 @@ public class SensorLoggerService extends Service implements
     public void onCreate() {
         sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
         mBroadcastReceiver = new ActivityDetectionBroadcastReceiver();
+        mAccidentDetection = new AccidentDetection(new StateMachineAlgo());
         buildGoogleApiClient();
         registerSensors();
     }
@@ -205,6 +212,10 @@ public class SensorLoggerService extends Service implements
                 break;
         }
 
+        mAccidentDetection.handleSensorData(data);
+        boolean isAccident = mAccidentDetection.getIsAccident();
+        data.setAccident(isAccident);
+
         String csvLine = data.toString();
         Log.d(TAG, csvLine);
         new StoreStringTask().execute(csvLine);
@@ -220,10 +231,13 @@ public class SensorLoggerService extends Service implements
         data.setAlt(location.getAltitude());
         data.setGPSError(location.getAccuracy());
         data.setSpeed(location.getSpeed());
+
+        mAccidentDetection.handleSensorData(data);
+        boolean isAccident = mAccidentDetection.getIsAccident();
+        data.setAccident(isAccident);
+
         String dataString = data.toString();
-
         Log.d(TAG, "Location: " + dataString);
-
         new StoreStringTask().execute(dataString);
     }
 
@@ -432,7 +446,7 @@ public class SensorLoggerService extends Service implements
         mGoogleApiClient.connect();
     }
 
-    
+
     @Override
     public void onConnectionFailed(@NonNull ConnectionResult result) {
         Log.i(TAG, "Connection failed: ConnectionResult.getErrorCode() = " + result.getErrorCode());

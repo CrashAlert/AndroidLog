@@ -414,7 +414,9 @@ public class SensorLoggerService extends Service implements
         // get last known location for first data point
         if (initialLocation == null && hasLocationPermissions()) {
             initialLocation = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
-            handleLocation(initialLocation);
+            if (initialLocation != null) {
+                handleLocation(initialLocation);
+            }
         }
 
         startLocationUpdates();

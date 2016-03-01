@@ -149,6 +149,11 @@ public class SensorLoggerService extends Service implements
         for (int sensorType : sensorTypes) {
             Sensor sensor = sensorManager.getDefaultSensor(sensorType);
 
+            if (sensor == null) {
+                Log.w(TAG, "Sensor not available: " + sensorType);
+                continue;
+            }
+
             String name = sensor.getName();
             float maxVal = sensor.getMaximumRange();
             float resolution = sensor.getResolution();

@@ -19,6 +19,7 @@
         </activity>
         <service android:name=".SensorLoggerService" android:exported="false" />
         <service android:name=".DetectedActivitiesIntentService" android:exported="false" />
+        <service android:name=".accidentdetection.AccidentDismissIntentService" android:exported="false" />
     </application>
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />

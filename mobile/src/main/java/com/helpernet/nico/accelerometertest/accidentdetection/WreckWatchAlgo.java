@@ -51,6 +51,9 @@ public class WreckWatchAlgo implements DetectionAlgorithm {
         return highAccAndPressure && (hadHighSpeed == 1 || distToLastHighSpeed < MAX_DIST_THRESH);
     }
 
+    @Override
+    public void cancelAccident() {}
+
     private float getDistance(double from_lat, double from_lng, double to_lat, double to_lng) {
         float[] results = new float[1];
         Location.distanceBetween(from_lat, from_lng, to_lat, to_lng, results);

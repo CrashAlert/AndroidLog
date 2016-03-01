@@ -35,6 +35,7 @@ import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
 import com.helpernet.nico.accelerometertest.accidentdetection.AccidentDetection;
+import com.helpernet.nico.accelerometertest.accidentdetection.AccidentDismissIntentService;
 import com.helpernet.nico.accelerometertest.accidentdetection.StateMachineAlgo;
 
 import java.io.BufferedWriter;
@@ -60,7 +61,8 @@ public class SensorLoggerService extends Service implements
     protected Location initialLocation;
     protected GoogleApiClient mGoogleApiClient;
 
-    protected ActivityDetectionBroadcastReceiver mBroadcastReceiver;
+    protected ActivityDetectionBroadcastReceiver mSensorBroadcastReceiver;
+    protected AccidentDismissBroadcastReceiver mAccidentBroadcastReceiver;
 
     private final String TAG = "SensorLoggerService";
 
@@ -69,7 +71,7 @@ public class SensorLoggerService extends Service implements
     private File dataLogFile = null;
 
 
-    private final int[] sensorTypes = new int[]{
+    private final int[] sensorTypes = new int[] {
             Sensor.TYPE_ACCELEROMETER,
             Sensor.TYPE_LINEAR_ACCELERATION,
             Sensor.TYPE_MAGNETIC_FIELD,
@@ -91,8 +93,9 @@ public class SensorLoggerService extends Service implements
     @Override
     public void onCreate() {
         sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
-        mBroadcastReceiver = new ActivityDetectionBroadcastReceiver();
-        mAccidentDetection = new AccidentDetection(new StateMachineAlgo());
+        mSensorBroadcastReceiver = new ActivityDetectionBroadcastReceiver();
+        mAccidentBroadcastReceiver = new AccidentDismissBroadcastReceiver();
+        mAccidentDetection = new AccidentDetection(this, new StateMachineAlgo());
         buildGoogleApiClient();
         registerSensors();
     }
@@ -106,8 +109,10 @@ public class SensorLoggerService extends Service implements
             createLogFile(logFileName);
         }
 
-        LocalBroadcastManager.getInstance(this).registerReceiver(mBroadcastReceiver,
-                new IntentFilter(DetectedActivitiesIntentService.INTENT_NAME));
+        LocalBroadcastManager.getInstance(this)
+                .registerReceiver(mSensorBroadcastReceiver, new IntentFilter(DetectedActivitiesIntentService.INTENT_NAME));
+        LocalBroadcastManager.getInstance(this)
+                .registerReceiver(mAccidentBroadcastReceiver, new IntentFilter(AccidentDismissIntentService.INTENT_NAME));
 
         mGoogleApiClient.connect();
         return START_STICKY;
@@ -118,7 +123,8 @@ public class SensorLoggerService extends Service implements
     public void onDestroy() {
         super.onDestroy();
         unregisterSensors();
-        LocalBroadcastManager.getInstance(this).unregisterReceiver(mBroadcastReceiver);
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(mSensorBroadcastReceiver);
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(mAccidentBroadcastReceiver);
         if (mGoogleApiClient.isConnected()) {
             stopLocationUpdates();
             stopActivityUpdates();
@@ -346,14 +352,28 @@ public class SensorLoggerService extends Service implements
      * the device.
      */
     public class ActivityDetectionBroadcastReceiver extends BroadcastReceiver {
-        protected static final String TAG = "activity-detection-response-receiver";
+        protected static final String TAG = "ActivityDetectionBroadcastReceiver";
 
         @Override
         public void onReceive(Context context, Intent intent) {
-            ArrayList<DetectedActivity> updatedActivities =
-                    intent.getParcelableArrayListExtra(DetectedActivitiesIntentService.EXTRA_DETECTED_ACTIVITIES);
-            long timestamp = intent.getLongExtra(DetectedActivitiesIntentService.EXTRA_TIME, System.currentTimeMillis());
-            handleDetectedActivitiesList(updatedActivities, timestamp);
+            if (intent.getAction().equals(DetectedActivitiesIntentService.INTENT_NAME)) {
+                ArrayList<DetectedActivity> updatedActivities =
+                        intent.getParcelableArrayListExtra(DetectedActivitiesIntentService.EXTRA_DETECTED_ACTIVITIES);
+                long timestamp = intent.getLongExtra(DetectedActivitiesIntentService.EXTRA_TIME, System.currentTimeMillis());
+                handleDetectedActivitiesList(updatedActivities, timestamp);
+            }
+        }
+    }
+
+    public class AccidentDismissBroadcastReceiver extends BroadcastReceiver {
+        protected static final String TAG = "AccidentDismissBR";
+
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            Log.i(TAG, "received intent: " + intent.getAction());
+            if (intent.getAction().equals(AccidentDismissIntentService.INTENT_NAME)) {
+                mAccidentDetection.cancelAccident();
+            }
         }
     }
 
@@ -423,7 +443,9 @@ public class SensorLoggerService extends Service implements
         // get last known location for first data point
         if (initialLocation == null && hasLocationPermissions()) {
             initialLocation = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
-            handleLocation(initialLocation);
+            if (initialLocation != null) {
+                handleLocation(initialLocation);
+            }
         }
 
         startLocationUpdates();

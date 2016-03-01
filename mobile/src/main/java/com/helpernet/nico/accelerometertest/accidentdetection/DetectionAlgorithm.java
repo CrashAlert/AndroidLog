@@ -9,4 +9,5 @@ import java.util.Iterator;
  */
 public interface DetectionAlgorithm {
     boolean isAccident(SensorData data);
+    void cancelAccident();
 }
